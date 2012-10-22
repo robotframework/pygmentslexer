@@ -1,0 +1,11 @@
+syntax: glob
+
+tmp
+robotframeworklexer.egg-info
+build
+dist
+.idea
+.*project
+*.pyc
+.DS_Store
+
