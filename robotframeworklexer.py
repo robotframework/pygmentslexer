@@ -1,10 +1,14 @@
 import re
 
-from pygments.lexer import RegexLexer
+from pygments.lexer import RegexLexer, bygroups
 from pygments.token import *
 
 
 TODO = Generic.Heading
+
+HEADING = Generic.Heading
+SETTING = Generic.Emph
+ARGUMENTS = Generic.Subheading
 
 class RobotFrameworkLexer(RegexLexer):
     flags = re.IGNORECASE|re.MULTILINE
@@ -14,11 +18,12 @@ class RobotFrameworkLexer(RegexLexer):
 
     tokens = {
         'root': [
-            (r'\*[\* ]*Settings?[\* ]*\n', Generic.Heading, 'settings'),
-            (r'\*[\* ]*Test ?Cases?[\* ]*\n', Generic.Heading, 'tests'),
+            (r'\*[\* ]*Settings?[\* ]*\n', HEADING, 'settings'),
+            (r'\*[\* ]*Test ?Cases?[\* ]*\n', HEADING, 'tests'),
         ],
         'settings': [
-            (r'Library.*\n', Generic.Emph, '#pop'),
+            (r'\*', HEADING, '#pop'),
+            (r'(.+?)(( {2,}|\t).*\n)', bygroups(SETTING, ARGUMENTS)),
         ],
         'tests': [
             (r'^\S.*?(\n|  +)', Generic.Subheading),
