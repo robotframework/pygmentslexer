@@ -11,6 +11,7 @@ setup(
     version      = '0.0.1',
     description  = __doc__,
     py_modules   = ['robotframeworklexer'],
-    entry_points = entry_points
+    entry_points = entry_points,
+    requires     = ['pygments']
 
 )
