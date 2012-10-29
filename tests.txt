@@ -1,12 +1,22 @@
 *** Settings ***
 Library    XML
 Resource   foobar.txt
+
 Force tags    regression    wip
 
 
 *** Variables ***
 ${VARIABLE}    value
-${VARIABLE}    value
+@{VARIABLE}    value 1    value 2    value 3    # comment
+${VARIABLE}    value # not comment
+
+
+#| @{VARIABLE} | value 1 | value 2 | value 3
+| @{VARIABLE} | value 1 | value 2 | value 3 | # comment
+| @{VARIABLE} | value 1 | value 2 | value 3
+| @{VARIABLE} | value 1 | value 2 | value 3|
+| @{VARIABLE} | value 1 | value 2 | value 3 |
+
 
 *** Test Cases ***
 Example

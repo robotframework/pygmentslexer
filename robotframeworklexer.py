@@ -6,9 +6,15 @@ from pygments.token import *
 
 TODO = Generic.Heading
 HEADING = Generic.Heading
-SETTING = Generic.Emph
-ARGUMENTS = Generic.Subheading
-COMMENT = Comment.Single
+SETTING = Generic.Subheading
+VARIABLE = Name.Variable
+ARGUMENT = Name
+COMMENT = Comment
+PIPE = Generic.Heading
+SPACES = Text
+
+SPACE_SEP = r'(?: {2,}|\t+)'
+PIPE_SEP = r' +\| +'
 
 
 class RobotFrameworkLexer(RegexLexer):
@@ -19,17 +25,44 @@ class RobotFrameworkLexer(RegexLexer):
 
     tokens = {
         'comment': [
-            (r'#.*?\n', COMMENT)
+            (r' *#.*\n', COMMENT),
+        ],
+        'empty-row': [
+            (r'^\n', SPACES),
+        ],
+        'generic': [
+            include('comment'),
+            include('empty-row')
         ],
         'root': [
-            include('comment'),
+            include('generic'),
             (r'\*[\* ]*Settings?[\* ]*\n', HEADING, 'settings'),
+            (r'\*[\* ]*Variables?[\* ]*\n', HEADING, 'variables'),
             (r'\*[\* ]*Test ?Cases?[\* ]*\n', HEADING, 'tests'),
         ],
         'settings': [
-            include('comment'),
+            include('generic'),
             (r'\*', HEADING, '#pop'),
-            (r'(.+?)(( {2,}|\t).*\n)', bygroups(SETTING, ARGUMENTS)),
+            (r'(.+?)(( {2,}|\t).*\n)', bygroups(SETTING, ARGUMENT)),
+        ],
+        'variables': [
+            include('generic'),
+            (r'\*', HEADING, '#pop'),
+            (r'[^\|].*?(?= {2,})', VARIABLE, 'spaces'),
+            (r'^(\| +)(.*?)(?= +\|)', bygroups(PIPE, VARIABLE), 'pipes')
+        ],
+        'spaces': [
+            (r' *\n', SPACES, '#pop'),
+            (r'#.*\n', COMMENT, '#pop'),
+            (r' {2,}', SPACES),
+            (r'.+?(?= {2,}|\n)', ARGUMENT),
+        ],
+        'pipes': [
+            (r'( +\|)? *\n', PIPE, '#pop'),
+            (r'#.*\n', COMMENT, '#pop'),
+            (r' +\| +', PIPE),
+            (r'.+?(?= +\| +)', ARGUMENT),
+            (r'.+?(?=( +\|)? *$)', ARGUMENT),
         ],
         'tests': [
             include('comment'),
