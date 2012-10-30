@@ -16,28 +16,37 @@ NAME = Generic.Subheading
 KW_NAME = Name.Function
 
 
-class Types(object):
+class TypeGetter(object):
 
     def __init__(self, types, pipes=False):
         self._types = types
-        if not pipes:
-            self._index_adjust = 0
-            self._separator = SPACES
-        else:
-            self._index_adjust = -1
-            self._separator = PIPE
+        self._separator, self._index_adjust = (PIPE, -1) if pipes else (SPACES, 0)
         self._commented = False
 
-    def get(self, index, token):
+    def get(self, token, index):
         self._commented = self._commented or token.startswith('#')
         if self._commented:
             return COMMENT
         index, modulo = divmod(index + self._index_adjust, 2)
         if modulo:
             return self._separator
-        if index < len(self._types):
-            return self._types[index]
-        return self._types[-1]
+        return self._get(token, index)
+
+    def _get(self, token, index):
+        index = index if index < len(self._types) else -1
+        return self._types[index]
+
+
+class TestCaseTypeGetter(TypeGetter):
+
+    def __init__(self, pipes=False):
+        TypeGetter.__init__(self, [NAME, KW_NAME, ARGUMENT], pipes)
+
+    def _get(self, token, index):
+        if index == 1 and token.startswith('[') and token.endswith(']'):
+            return SETTING
+        return TypeGetter._get(self, token, index)
+
 
 
 class Splitter(object):
@@ -85,38 +94,44 @@ class VariableFinder(object):
             yield token, type
 
 
-
-
 class RowParser(object):
-    _types = None
 
     def __call__(self, lexer, match):
         row = match.group(0)
         return iter(self.tokenize(row, pipes=row.startswith('| ')))
 
     def tokenize(self, row, pipes=False):
-        types = Types(self._types, pipes)
+        types = self._type_getter(pipes)
         splitter = Splitter(pipes)
         var_finder = VariableFinder()
         position = 0
         for index, token in enumerate(splitter.split(row)):
-            type = types.get(index, token)
+            type = types.get(token, index)
             for token, type in var_finder.tokenize(token, type):
                 yield (position, type, token)
                 position += len(token)
 
+    def _type_getter(self, pipes):
+        raise NotImplementedError
+
+
 
 class Variable(RowParser):
-    _types = [VARIABLE, ARGUMENT]
+
+    def _type_getter(self, pipes):
+        return TypeGetter([VARIABLE, ARGUMENT], pipes)
 
 
 class Setting(RowParser):
-    _types = [SETTING, ARGUMENT]
+
+    def _type_getter(self, pipes):
+        return TypeGetter([SETTING, ARGUMENT], pipes)
 
 
 class TestCase(RowParser):
-    _types = [NAME, KW_NAME, ARGUMENT]
 
+    def _type_getter(self, pipes):
+        return TestCaseTypeGetter(pipes)
 
 
 class RobotFrameworkLexer(RegexLexer):

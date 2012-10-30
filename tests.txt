@@ -21,6 +21,7 @@ ${VARIABLE}    value # not comment
 Example
     Keyword    arg    arg ${with var}    # comment
     Keyword    arg    arg ${with var}    # comment
+    [teardown]    keyword    arg
 
 Example 2    [Documentation]    example
     Keyword    arg    arg ${with var}    # comment
