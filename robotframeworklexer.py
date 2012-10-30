@@ -1,6 +1,6 @@
 import re
 
-from pygments.lexer import RegexLexer, include
+from pygments.lexer import Lexer
 from pygments.token import *
 
 
@@ -106,8 +106,7 @@ class VariableFinder(object):
 
 class RowParser(object):
 
-    def __call__(self, lexer, match):
-        row = match.group(0)
+    def __call__(self, row):
         return iter(self.tokenize(row, pipes=row.startswith('| ')))
 
     def tokenize(self, row, pipes=False):
@@ -150,44 +149,23 @@ class Keyword(RowParser):
         return TestCaseTypeGetter(pipes)
 
 
-class RobotFrameworkLexer(RegexLexer):
+class RobotFrameworkLexer(Lexer):
     flags = re.IGNORECASE | re.MULTILINE
     name = 'RobotFrameworkLexer'
     aliases = ['robotframework']
     filenames = ['*.txt']
 
     def __init__(self):
-        RegexLexer.__init__(self, tabsize=2, encoding='UTF-8')
+        Lexer.__init__(self, tabsize=2, encoding='UTF-8')
 
-    tokens = {
-        'root': [
-            include('generic'),
-            (r'\*[\* ]*Settings?[\* ]*\n', HEADING, 'settings'),
-            (r'\*[\* ]*Variables?[\* ]*\n', HEADING, 'variables'),
-            (r'\*[\* ]*Test ?Cases?[\* ]*\n', HEADING, 'tests'),
-            (r'\*[\* ]*Keywords?[\* ]*\n', HEADING, 'keywords'),
-        ],
-        'settings': [
-            include('pop-heading'),
-            (r'.*\n', Setting()),
-        ],
-        'variables': [
-            include('pop-heading'),
-            (r'.*\n', Variable()),
-        ],
-        'tests': [
-            include('pop-heading'),
-            (r'.*\n', TestCase())
-        ],
-        'keywords': [
-            include('pop-heading'),
-            (r'.*\n', Keyword())
-        ],
-        'generic': [
-            (r' *#.*\n', COMMENT),
-            (r'^\n', SPACES),
-        ],
-        'pop-heading': [
-            (r'(?=\*)', HEADING, '#pop')
-        ],
-    }
+    def get_tokens_unprocessed(self, text):
+        parser = None
+        for line in text.splitlines(True):
+            if line.startswith('*'):
+                table = line.strip().strip('*').replace(' ', '').rstrip('s').lower()
+                parser = {'setting': Setting(),
+                          'variable': Variable(),
+                          'testcase': TestCase(),
+                          'keyword': Keyword()}[table]
+            for token in parser(line):
+                yield token
