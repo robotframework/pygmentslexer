@@ -67,9 +67,6 @@ class Splitter(object):
 class Variable(object):
     _types = [VARIABLE, ARGUMENT]
 
-    def __init__(self, pipes=False):
-        self._pipes = pipes
-
     def __call__(self, lexer, match):
         row = match.group(0)
         pipes = row.startswith('| ')
@@ -79,6 +76,11 @@ class Variable(object):
         for index, token in enumerate(splitter.split(row)):
             yield (position, types.get(index, token), token)
             position += len(token)
+
+
+class Setting(Variable):
+    _types = [SETTING, ARGUMENT]
+
 
 
 class RobotFrameworkLexer(RegexLexer):
@@ -94,6 +96,9 @@ class RobotFrameworkLexer(RegexLexer):
         'empty-row': [
             (r'^\n', SPACES),
         ],
+        'pop-heading': [
+            (r'(?=\*)', HEADING, '#pop')
+        ],
         'generic': [
             include('comment'),
             include('empty-row')
@@ -105,13 +110,11 @@ class RobotFrameworkLexer(RegexLexer):
             (r'\*[\* ]*Test ?Cases?[\* ]*\n', HEADING, 'tests'),
         ],
         'settings': [
-            include('generic'),
-            (r'\*', HEADING, '#pop'),
-            (r'(.+?)(( {2,}|\t).*\n)', bygroups(SETTING, ARGUMENT)),
+            include('pop-heading'),
+            (r'.*\n', Setting()),
         ],
         'variables': [
-            include('empty-row'),
-            (r'\*', HEADING, '#pop'),
+            include('pop-heading'),
             (r'.*\n', Variable()),
         ],
         'tests': [
