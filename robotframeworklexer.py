@@ -13,51 +13,45 @@ COMMENT = Comment
 PIPE = Generic.Heading
 SPACES = Text
 
-SPACE_SEP = r'(?: {2,}|\t+)'
-PIPE_SEP = r' +\| +'
+
+class Types(object):
+
+    def __init__(self, types, pipes=False):
+        self._types = types
+        if not pipes:
+            self._index_adjust = 0
+            self._separator = SPACES
+        else:
+            self._index_adjust = -1
+            self._separator = PIPE
+        self._commented = False
+
+    def get(self, index, token):
+        self._commented = self._commented or token.startswith('#')
+        if self._commented:
+            return COMMENT
+        index += self._index_adjust
+        if index % 2:
+            return self._separator
+        if index < len(self._types):
+            return self._types[index]
+        return self._types[-1]
 
 
-class Variable(object):
+class Splitter(object):
     _space_splitter = re.compile('( {2,})')
     _pipe_splitter = re.compile('( +\| +)')
     _pipe_start = re.compile('(^\| +)')
     _pipe_end = re.compile('( +\| *\n)')
-    _types = [VARIABLE, ARGUMENT]
 
     def __init__(self, pipes=False):
-        if not pipes:
-            self._splitter = self._split_from_spaces
-            self._index_adjust = 0
-            self._separator = SPACES
-        else:
-            self._splitter = self._split_from_pipes
-            self._index_adjust = -1
-            self._separator = PIPE
+        self.split = self._from_spaces if not pipes else self._from_pipes
 
-    def __call__(self, lexer, match):
-        position = 0
-        commented = False
-        for index, token in enumerate(self._splitter(match.group(0))):
-            commented = commented or token.startswith('#')
-            type = self._get_type(index, commented)
-            yield (position, type, token)
-            position += len(token)
-
-    def _get_type(self, index, commented):
-        if commented:
-            return COMMENT
-        index += self._index_adjust
-        if not index % 2:
-            return self._separator
-        if index > len(self._types):
-            return self._types[-1]
-        return self._types[index]
-
-    def _split_from_spaces(self, row):
+    def _from_spaces(self, row):
         for token in self._space_splitter.split(row):
             yield token
 
-    def _split_from_pipes(self, row):
+    def _from_pipes(self, row):
         _, start, row = self._pipe_start.split(row)
         yield start
         if self._pipe_end.search(row):
@@ -68,6 +62,23 @@ class Variable(object):
             yield token
         if end:
             yield end
+
+
+class Variable(object):
+    _types = [VARIABLE, ARGUMENT]
+
+    def __init__(self, pipes=False):
+        self._pipes = pipes
+
+    def __call__(self, lexer, match):
+        row = match.group(0)
+        pipes = row.startswith('| ')
+        types = Types(self._types, pipes)
+        splitter = Splitter(pipes)
+        position = 0
+        for index, token in enumerate(splitter.split(row)):
+            yield (position, types.get(index, token), token)
+            position += len(token)
 
 
 class RobotFrameworkLexer(RegexLexer):
@@ -101,7 +112,6 @@ class RobotFrameworkLexer(RegexLexer):
         'variables': [
             include('empty-row'),
             (r'\*', HEADING, '#pop'),
-            (r'\| .*\n', Variable(pipes=True)),
             (r'.*\n', Variable()),
         ],
         'tests': [
