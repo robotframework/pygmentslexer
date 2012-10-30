@@ -19,4 +19,8 @@ ${VARIABLE}    value # not comment
 
 *** Test Cases ***
 Example
-    Keyword
+    Keyword    arg    arg ${with var}    # comment
+    Keyword    arg    arg ${with var}    # comment
+
+Example 2    [Documentation]    example
+    Keyword    arg    arg ${with var}    # comment

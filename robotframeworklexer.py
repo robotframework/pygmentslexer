@@ -12,6 +12,8 @@ ARGUMENT = Name
 COMMENT = Comment
 PIPE = Generic.Heading
 SPACES = Text
+NAME = Generic.Subheading
+KW_NAME = Name.Function
 
 
 class Types(object):
@@ -30,8 +32,8 @@ class Types(object):
         self._commented = self._commented or token.startswith('#')
         if self._commented:
             return COMMENT
-        index += self._index_adjust
-        if index % 2:
+        index, modulo = divmod(index + self._index_adjust, 2)
+        if modulo:
             return self._separator
         if index < len(self._types):
             return self._types[index]
@@ -83,12 +85,16 @@ class VariableFinder(object):
             yield token, type
 
 
-class Variable(object):
-    _types = [VARIABLE, ARGUMENT]
+
+
+class RowParser(object):
+    _types = None
 
     def __call__(self, lexer, match):
         row = match.group(0)
-        pipes = row.startswith('| ')
+        return iter(self.tokenize(row, pipes=row.startswith('| ')))
+
+    def tokenize(self, row, pipes=False):
         types = Types(self._types, pipes)
         splitter = Splitter(pipes)
         var_finder = VariableFinder()
@@ -100,8 +106,16 @@ class Variable(object):
                 position += len(token)
 
 
-class Setting(Variable):
+class Variable(RowParser):
+    _types = [VARIABLE, ARGUMENT]
+
+
+class Setting(RowParser):
     _types = [SETTING, ARGUMENT]
+
+
+class TestCase(RowParser):
+    _types = [NAME, KW_NAME, ARGUMENT]
 
 
 
@@ -112,19 +126,6 @@ class RobotFrameworkLexer(RegexLexer):
     filenames = ['*.txt']
 
     tokens = {
-        'comment': [
-            (r' *#.*\n', COMMENT),
-        ],
-        'empty-row': [
-            (r'^\n', SPACES),
-        ],
-        'pop-heading': [
-            (r'(?=\*)', HEADING, '#pop')
-        ],
-        'generic': [
-            include('comment'),
-            include('empty-row')
-        ],
         'root': [
             include('generic'),
             (r'\*[\* ]*Settings?[\* ]*\n', HEADING, 'settings'),
@@ -140,9 +141,14 @@ class RobotFrameworkLexer(RegexLexer):
             (r'.*\n', Variable()),
         ],
         'tests': [
-            include('comment'),
-            (r'^\S.*?(\n|  +)', Generic.Subheading),
-            (r'^ +', Text),
-            (r'.*\n', Keyword)
-        ]
+            include('pop-heading'),
+            (r'.*\n', TestCase())
+        ],
+        'generic': [
+            (r' *#.*\n', COMMENT),
+            (r'^\n', SPACES),
+        ],
+        'pop-heading': [
+            (r'(?=\*)', HEADING, '#pop')
+        ],
     }
