@@ -25,3 +25,17 @@ Example
 
 Example 2    [Documentation]    example
     Keyword    arg    arg ${with var}    # comment
+    ${var} =    keyword
+    ${var}    keyword    ${arg}   ${two} vars ${here}    arg   arg    arg
+    ${v1}    ${v2}    @{v3} =    keyword
+
+
+*** Keywords ***
+
+XXX
+    [Documentation]    hello
+    kw    arg
+    ${var} =    kw    ${var}
+    [Return]    ${var}
+
+Given ${variable} handling works out-of-the-box

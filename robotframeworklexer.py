@@ -41,11 +41,21 @@ class TestCaseTypeGetter(TypeGetter):
 
     def __init__(self, pipes=False):
         TypeGetter.__init__(self, [NAME, KW_NAME, ARGUMENT], pipes)
+        self._assign = []
+        self._keyword_found = False
 
     def _get(self, token, index):
+        if index == 0:
+            return TypeGetter._get(self, token, index)
         if index == 1 and token.startswith('[') and token.endswith(']'):
             return SETTING
-        return TypeGetter._get(self, token, index)
+        if not self._keyword_found and \
+            token.startswith(('${', '@{')) and token.rstrip(' =').endswith('}'):
+            self._assign.append(token)
+            return VARIABLE
+        else:
+            self._keyword_found = True
+        return TypeGetter._get(self, token, index - len(self._assign))
 
 
 
@@ -81,7 +91,7 @@ class VariableFinder(object):
 
     def tokenize(self, string, type):
         # TODO: cleanup, enhance, and unit test
-        if not self._start.search(string):
+        if not self._start.search(string) or type is VARIABLE:
             yield string, type
             raise StopIteration
         before, start, after = self._start.split(string, 1)
@@ -134,6 +144,12 @@ class TestCase(RowParser):
         return TestCaseTypeGetter(pipes)
 
 
+class Keyword(RowParser):
+
+    def _type_getter(self, pipes):
+        return TestCaseTypeGetter(pipes)
+
+
 class RobotFrameworkLexer(RegexLexer):
     flags = re.IGNORECASE | re.MULTILINE
     name = 'RobotFrameworkLexer'
@@ -146,6 +162,7 @@ class RobotFrameworkLexer(RegexLexer):
             (r'\*[\* ]*Settings?[\* ]*\n', HEADING, 'settings'),
             (r'\*[\* ]*Variables?[\* ]*\n', HEADING, 'variables'),
             (r'\*[\* ]*Test ?Cases?[\* ]*\n', HEADING, 'tests'),
+            (r'\*[\* ]*Keywords?[\* ]*\n', HEADING, 'keywords'),
         ],
         'settings': [
             include('pop-heading'),
@@ -158,6 +175,10 @@ class RobotFrameworkLexer(RegexLexer):
         'tests': [
             include('pop-heading'),
             (r'.*\n', TestCase())
+        ],
+        'keywords': [
+            include('pop-heading'),
+            (r'.*\n', Keyword())
         ],
         'generic': [
             (r' *#.*\n', COMMENT),
