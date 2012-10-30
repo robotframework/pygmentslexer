@@ -9,6 +9,7 @@ pygmentize -S autumn -f html > $styles
 echo '<html><head>' > $out
 echo '<link rel="stylesheet" type="text/css" href="styles.css">' >> $out
 echo '</head><body>' >> $out
-pygmentize -f html -l robotframework $tests >> $out
+pygmentize -f html -l robotframework -o $out-2 $tests
+cat $out-2 >> $out
 echo '</body></html>' >> $out
 echo $out

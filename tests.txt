@@ -1,4 +1,5 @@
 *** Settings ***
+Documentation    Hyvää päivää
 Library    XML
 Resource   foobar.txt    # comment
 

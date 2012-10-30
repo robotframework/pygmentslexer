@@ -1,6 +1,6 @@
 import re
 
-from pygments.lexer import RegexLexer, bygroups, include
+from pygments.lexer import RegexLexer, include
 from pygments.token import *
 
 
@@ -155,6 +155,9 @@ class RobotFrameworkLexer(RegexLexer):
     name = 'RobotFrameworkLexer'
     aliases = ['robotframework']
     filenames = ['*.txt']
+
+    def __init__(self):
+        RegexLexer.__init__(self, tabsize=2, encoding='UTF-8')
 
     tokens = {
         'root': [
