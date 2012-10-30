@@ -64,6 +64,25 @@ class Splitter(object):
             yield end
 
 
+class VariableFinder(object):
+    _start = re.compile(r'(\$\{)')
+    _end = '}'
+
+    def tokenize(self, string, type):
+        # TODO: cleanup, enhance, and unit test
+        if not self._start.search(string):
+            yield string, type
+            raise StopIteration
+        before, start, after = self._start.split(string, 1)
+        if '}' not in after:
+            yield string, type
+        yield before, type
+        base, after = after.split('}', 1)
+        yield start + base + '}', VARIABLE
+        for token, type in self.tokenize(after, type):
+            yield token, type
+
+
 class Variable(object):
     _types = [VARIABLE, ARGUMENT]
 
@@ -72,10 +91,13 @@ class Variable(object):
         pipes = row.startswith('| ')
         types = Types(self._types, pipes)
         splitter = Splitter(pipes)
+        var_finder = VariableFinder()
         position = 0
         for index, token in enumerate(splitter.split(row)):
-            yield (position, types.get(index, token), token)
-            position += len(token)
+            type = types.get(index, token)
+            for token, type in var_finder.tokenize(token, type):
+                yield (position, type, token)
+                position += len(token)
 
 
 class Setting(Variable):

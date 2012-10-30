@@ -2,12 +2,12 @@
 Library    XML
 Resource   foobar.txt    # comment
 
-| Force tags  |  regression  |  wip
+| Force tags  |  regression  |  ${var}
 # comment
 
 *variable
 ${VARIABLE}    value
-@{VARIABLE}    value 1    value 2    value 3    # comment
+@{VARIABLE}    value 1    this ${var} is    \${not}    \\${var}    # comment
 ${VARIABLE}    value # not comment
 
 #| @{VARIABLE} | value 1 | value 2 | value 3
