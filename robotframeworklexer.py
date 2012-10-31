@@ -33,51 +33,49 @@ SYNTAX = Name
 class TypeGetter(object):
     _types = None
 
-    def get(self, token, index):
+    def get_type(self, token, index):
         index = index if index < len(self._types) else -1
         return self._types[index]
 
-    def end_of_line(self):
+    def end_of_row(self):
         pass
 
 
-class Variable(TypeGetter):
+class VariableTable(TypeGetter):
     _types = [VAR_BASE, ARGUMENT]
 
 
-class Setting(TypeGetter):
+class SettingTable(TypeGetter):
     _types = [SETTING, ARGUMENT]
 
 
-class TestCase(TypeGetter):
+class TestCaseTable(TypeGetter):
     _types = [NAME, KW_NAME, ARGUMENT]
 
     def __init__(self):
         self._assign = []
         self._keyword_found = False
 
-    def get(self, token, index):
-        if index == 0:
-            return TypeGetter.get(self, token, index)
+    def get_type(self, token, index):
         if index == 1 and token.startswith('[') and token.endswith(']'):
             return SETTING
         if not self._keyword_found and \
             token.startswith(('${', '@{')) and token.rstrip(' =').endswith('}'):
             self._assign.append(token)
             return SYNTAX  # VariableFinder tokenizes this later
-        else:
+        if index > 0:
             self._keyword_found = True
-        return TypeGetter.get(self, token, index - len(self._assign))
+        return TypeGetter.get_type(self, token, index - len(self._assign))
 
-    def end_of_line(self):
+    def end_of_row(self):
         self.__init__()
 
 
-class Comment(TypeGetter):
+class CommentTable(TypeGetter):
     _types = [COMMENT]
 
 
-class Keyword(TestCase):
+class KeywordTable(TestCaseTable):
     pass
 
 
@@ -154,42 +152,42 @@ class RobotFrameworkLexer(Lexer):
 
 
 class RowTokenizer(object):
-    _tables = {'settings': Setting, 'setting': Setting, 'metadata': Setting,
-               'variables': Variable, 'variable': Variable,
-               'testcases': TestCase, 'testcase': TestCase,
-               'keywords': Keyword, 'keyword': Keyword,
-               'userkeywords': Keyword, 'userkeyword': Keyword}
+    _tables = {'settings': SettingTable, 'setting': SettingTable, 'metadata': SettingTable,
+               'variables': VariableTable, 'variable': VariableTable,
+               'testcases': TestCaseTable, 'testcase': TestCaseTable,
+               'keywords': KeywordTable, 'keyword': KeywordTable,
+               'userkeywords': KeywordTable, 'userkeyword': KeywordTable}
 
     def __init__(self):
-        self._types = Comment()
+        self._table = CommentTable()
         self._splitter = Splitter()
 
     def tokenize(self, row):
-        self._commented = False
-        self._heading = False
+        commented = False
+        heading = False
         for index, token in enumerate(self._splitter.split(row)):
-            type = self._get_type(token, index)
-            self._types.end_of_line()
-            yield token, type
+            index, separator = divmod(index-1, 2)
+            if token.startswith('#'):
+                commented = True
+            elif index == 0 and token.startswith('*'):
+                self._table = self._start_table(token)
+                heading = True
+            type = self._get_type(commented, separator, heading, token, index)
+            yield (token, type)
+        self._table.end_of_row()
 
-    def _get_type(self, token, index):
-        if token.startswith('#'):
-            self._commented = True
-        if self._commented:
+    def _start_table(self, header):
+        name = header.strip().replace('*', '').replace(' ', '').lower()
+        return self._tables.get(name, CommentTable)()
+
+    def _get_type(self, commented, separator, heading, token, index):
+        if commented:
             return COMMENT
-        index, separator = divmod(index-1, 2)
         if separator:
             return SEPARATOR
-        if index == 0 and token.startswith('*'):
-            self._types = self._start_table(token)
-            self._heading = True
-        if self._heading:
+        if heading:
             return HEADING
-        return self._types.get(token, index)
-
-    def _start_table(self, name):
-        name = name.strip().replace('*', '').replace(' ', '').lower()
-        return self._tables.get(name, Comment)()
+        return self._table.get_type(token, index)
 
 
 # Following code copied directly from Robot Framework 2.7.5.
