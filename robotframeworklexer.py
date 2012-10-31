@@ -30,6 +30,124 @@ KW_NAME = Name.Function
 SYNTAX = Name
 
 
+class RobotFrameworkLexer(Lexer):
+    name = 'RobotFrameworkLexer'
+    aliases = ['robotframework']
+    filenames = ['*.txt']
+
+    def __init__(self):
+        Lexer.__init__(self, tabsize=2, encoding='UTF-8')
+
+    def get_tokens_unprocessed(self, text):
+        row_tokenizer = RowTokenizer()
+        var_tokenizer = VariableTokenizer()
+        position = 0
+        for row in text.splitlines(True):
+            for token, type in row_tokenizer.tokenize(row):
+                for token, type in var_tokenizer.tokenize(token, type):
+                    yield (position, type, token)
+                    position += len(token)
+
+
+class VariableTokenizer(object):
+    _start = re.compile(r'(\\*[$@]\{)')
+    _end = u'}'
+
+    def tokenize(self, string, type):
+        # TODO: cleanup, enhance, and unit test
+        if type is COMMENT or not self._start.search(string):
+            yield string, type
+            return
+        before, start, after = self._start.split(string, 1)
+        if self._end not in after:
+            yield string, type
+            return
+        if before:
+            yield before, type
+        base, after = after.split(self._end, 1)
+        yield start, VAR_DECO
+        yield base, VAR_BASE
+        yield self._end, VAR_DECO
+        for token, type in self.tokenize(after, type):
+            if token:
+                yield token, type
+
+
+class RowTokenizer(object):
+
+    def __init__(self):
+        self._table = CommentTable()
+        self._splitter = Splitter()
+        self._tables = {'settings': SettingTable,
+                        'setting': SettingTable,
+                        'metadata': SettingTable,
+                        'variables': VariableTable,
+                        'variable': VariableTable,
+                        'testcases': TestCaseTable,
+                        'testcase': TestCaseTable,
+                        'keywords': KeywordTable,
+                        'keyword': KeywordTable,
+                        'userkeywords': KeywordTable,
+                        'userkeyword': KeywordTable}
+
+    def tokenize(self, row):
+        commented = False
+        heading = False
+        for index, token in enumerate(self._splitter.split(row)):
+            index, separator = divmod(index-1, 2)
+            if token.startswith('#'):
+                commented = True
+            elif index == 0 and token.startswith('*'):
+                self._table = self._start_table(token)
+                heading = True
+            type = self._get_type(commented, separator, heading, token, index)
+            yield (token, type)
+        self._table.end_of_row()
+
+    def _start_table(self, header):
+        name = header.strip().replace('*', '').replace(' ', '').lower()
+        return self._tables.get(name, CommentTable)()
+
+    def _get_type(self, commented, separator, heading, token, index):
+        if commented:
+            return COMMENT
+        if separator:
+            return SEPARATOR
+        if heading:
+            return HEADING
+        return self._table.get_type(token, index)
+
+
+
+class Splitter(object):
+    _space_splitter = re.compile('( {2,})')
+    _pipe_splitter = re.compile('( +\| +)')
+    _pipe_start = re.compile('^(\| +)')
+    _pipe_end = re.compile('( +\| *\n)')
+
+    def split(self, row):
+        if self._pipe_start.match(row):
+            return self._split_from_pipes(row)
+        return self._split_from_spaces(row)
+
+    def _split_from_spaces(self, row):
+        yield u''  # Yield elements same way as when pipe is separator
+        for token in self._space_splitter.split(row):
+            yield token
+
+    def _split_from_pipes(self, row):
+        _, start, row = self._pipe_start.split(row)
+        yield start
+        if self._pipe_end.search(row):
+            row, end, _ = self._pipe_end.split(row)
+        else:
+            end = None
+        for token in self._pipe_splitter.split(row):
+            yield token
+        if end:
+            yield end
+
+
 class TypeGetter(object):
     _types = None
 
@@ -77,117 +195,6 @@ class CommentTable(TypeGetter):
 
 class KeywordTable(TestCaseTable):
     pass
-
-
-class Splitter(object):
-    _space_splitter = re.compile('( {2,})')
-    _pipe_splitter = re.compile('( +\| +)')
-    _pipe_start = re.compile('^(\| +)')
-    _pipe_end = re.compile('( +\| *\n)')
-
-    def split(self, row):
-        if self._pipe_start.match(row):
-            return self._split_from_pipes(row)
-        return self._split_from_spaces(row)
-
-    def _split_from_spaces(self, row):
-        yield u''  # Yield elements same way as when pipe is separator
-        for token in self._space_splitter.split(row):
-            yield token
-
-    def _split_from_pipes(self, row):
-        _, start, row = self._pipe_start.split(row)
-        yield start
-        if self._pipe_end.search(row):
-            row, end, _ = self._pipe_end.split(row)
-        else:
-            end = None
-        for token in self._pipe_splitter.split(row):
-            yield token
-        if end:
-            yield end
-
-
-class VariableTokenizer(object):
-    _start = re.compile(r'(\\*[$@]\{)')
-    _end = u'}'
-
-    def tokenize(self, string, type):
-        # TODO: cleanup, enhance, and unit test
-        if type is COMMENT or not self._start.search(string):
-            yield string, type
-            return
-        before, start, after = self._start.split(string, 1)
-        if self._end not in after:
-            yield string, type
-            return
-        if before:
-            yield before, type
-        base, after = after.split(self._end, 1)
-        yield start, VAR_DECO
-        yield base, VAR_BASE
-        yield self._end, VAR_DECO
-        for token, type in self.tokenize(after, type):
-            if token:
-                yield token, type
-
-
-class RobotFrameworkLexer(Lexer):
-    name = 'RobotFrameworkLexer'
-    aliases = ['robotframework']
-    filenames = ['*.txt']
-
-    def __init__(self):
-        Lexer.__init__(self, tabsize=2, encoding='UTF-8')
-
-    def get_tokens_unprocessed(self, text):
-        row_tokenizer = RowTokenizer()
-        var_tokenizer = VariableTokenizer()
-        position = 0
-        for row in text.splitlines(True):
-            for token, type in row_tokenizer.tokenize(row):
-                for token, type in var_tokenizer.tokenize(token, type):
-                    yield (position, type, token)
-                    position += len(token)
-
-
-class RowTokenizer(object):
-    _tables = {'settings': SettingTable, 'setting': SettingTable, 'metadata': SettingTable,
-               'variables': VariableTable, 'variable': VariableTable,
-               'testcases': TestCaseTable, 'testcase': TestCaseTable,
-               'keywords': KeywordTable, 'keyword': KeywordTable,
-               'userkeywords': KeywordTable, 'userkeyword': KeywordTable}
-
-    def __init__(self):
-        self._table = CommentTable()
-        self._splitter = Splitter()
-
-    def tokenize(self, row):
-        commented = False
-        heading = False
-        for index, token in enumerate(self._splitter.split(row)):
-            index, separator = divmod(index-1, 2)
-            if token.startswith('#'):
-                commented = True
-            elif index == 0 and token.startswith('*'):
-                self._table = self._start_table(token)
-                heading = True
-            type = self._get_type(commented, separator, heading, token, index)
-            yield (token, type)
-        self._table.end_of_row()
-
-    def _start_table(self, header):
-        name = header.strip().replace('*', '').replace(' ', '').lower()
-        return self._tables.get(name, CommentTable)()
-
-    def _get_type(self, commented, separator, heading, token, index):
-        if commented:
-            return COMMENT
-        if separator:
-            return SEPARATOR
-        if heading:
-            return HEADING
-        return self._table.get_type(token, index)
 
 
 # Following code copied directly from Robot Framework 2.7.5.
