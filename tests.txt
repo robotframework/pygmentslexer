@@ -1,3 +1,5 @@
+Stuff before first table is considered comment.
+
 *** Settings ***
 Documentation    Hyvää päivää
 Library    XML
@@ -5,6 +7,10 @@ Resource   foobar.txt    # comment
 
 | Force tags  |  regression  |  ${var}
 # comment
+
+*** Unknown table ***
+Stuff in non-recognized tables is considered comment.
+This too    is comment.
 
 *variable
 ${VARIABLE}    value

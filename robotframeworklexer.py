@@ -73,6 +73,10 @@ class TestCase(TypeGetter):
         self.__init__()
 
 
+class Comment(TypeGetter):
+    _types = [COMMENT]
+
+
 class Keyword(TestCase):
     pass
 
@@ -135,7 +139,7 @@ class RobotFrameworkLexer(Lexer):
         Lexer.__init__(self, tabsize=2, encoding='UTF-8')
 
     def get_tokens_unprocessed(self, text):
-        type_getter = None
+        types = Comment()
         splitter = Splitter()
         position = 0   # Who uses this???
         var_finder = VariableFinder()
@@ -151,21 +155,19 @@ class RobotFrameworkLexer(Lexer):
                     yield (position, PIPE, token)
                 elif index == 0 and token.startswith('*'):
                     table = token.strip().strip('*').replace(' ', '').rstrip('s').lower()
-                    type_getter = {'setting': Setting(),
-                              'variable': Variable(),
-                              'testcase': TestCase(),
-                              'keyword': Keyword()}[table]
+                    types = {'setting': Setting(),
+                             'variable': Variable(),
+                             'testcase': TestCase(),
+                             'keyword': Keyword()}.get(table, Comment())
                     yield (position, HEADING, token)
                 else:
-                    type = type_getter.get(token, index)
+                    type = types.get(token, index)
                     for token, type in var_finder.tokenize(token, type):
                         yield (position, type, token)
-            type_getter.end_of_line()
+            types.end_of_line()
 
 
-
-
-# The following code is copied from robotframework
+# Following code copied directly from Robot Framework 2.7.5.
 
 class VariableSplitter:
 
