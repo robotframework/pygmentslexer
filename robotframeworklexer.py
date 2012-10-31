@@ -20,7 +20,8 @@ from pygments.token import *
 
 HEADING = Generic.Heading
 SETTING = Generic.Subheading
-VARIABLE = Name.Variable
+VAR_BASE = Name
+VAR_DECO = Name.Variable
 ARGUMENT = Name
 COMMENT = Comment
 PIPE = Generic.Heading
@@ -42,7 +43,7 @@ class TypeGetter(object):
 
 
 class Variable(TypeGetter):
-    _types = [VARIABLE, ARGUMENT]
+    _types = [VAR_BASE, ARGUMENT]
 
 
 class Setting(TypeGetter):
@@ -105,24 +106,28 @@ class Splitter(object):
             yield end
 
 
-class VariableFinder(object):
+class VariableTokenizer(object):
     _start = re.compile(r'(\\*[$@]\{)')
-    _end = '}'
+    _end = u'}'
 
     def tokenize(self, string, type):
         # TODO: cleanup, enhance, and unit test
-        if not self._start.search(string) or type is VARIABLE:
+        if not self._start.search(string):
             yield string, type
             return
         before, start, after = self._start.split(string, 1)
         if self._end not in after:
             yield string, type
             return
-        yield before, type
+        if before:
+            yield before, type
         base, after = after.split(self._end, 1)
-        yield start + base + self._end, VARIABLE
+        yield start, VAR_DECO
+        yield base, VAR_BASE
+        yield self._end, VAR_DECO
         for token, type in self.tokenize(after, type):
-            yield token, type
+            if token:
+                yield token, type
 
 
 class RobotFrameworkLexer(Lexer):
@@ -138,7 +143,7 @@ class RobotFrameworkLexer(Lexer):
         type_getter = None
         splitter = Splitter()
         position = 0   # Who uses this???
-        var_finder = VariableFinder()
+        var_tokenizer = VariableTokenizer()
         for line in text.splitlines(True):
             pipes = line.startswith('| ')
             commented = False
@@ -158,7 +163,7 @@ class RobotFrameworkLexer(Lexer):
                     yield (position, HEADING, token)
                 else:
                     type = type_getter.get(token, index)
-                    for token, type in var_finder.tokenize(token, type):
+                    for token, type in var_tokenizer.tokenize(token, type):
                         yield (position, type, token)
             type_getter.end_of_line()
 
