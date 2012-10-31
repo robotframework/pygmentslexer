@@ -24,7 +24,7 @@ ${VARIABLE}    value # not comment
 | @{VARIABLE} | value 1 | value 2 | value 3 |
 
 
-| *** Test Cases |
+| *** Test Case *** | *** Action *** | *** Argument *** |
 Example
     Keyword    arg    arg ${with var}    # comment
     Keyword    arg    arg ${with var}    # comment
@@ -37,7 +37,7 @@ Example 2    [Documentation]    example
     ${v1}    ${v2}    @{v3} =    keyword
 
 
-*** Keywords ***
+*** Keywords ***    Heading    # Comment     here
 
 XXX
     [Documentation]    hello

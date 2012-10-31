@@ -154,30 +154,42 @@ class RobotFrameworkLexer(Lexer):
 
 
 class RowTokenizer(object):
+    _tables = {'settings': Setting, 'setting': Setting, 'metadata': Setting,
+               'variables': Variable, 'variable': Variable,
+               'testcases': TestCase, 'testcase': TestCase,
+               'keywords': Keyword, 'keyword': Keyword,
+               'userkeywords': Keyword, 'userkeyword': Keyword}
 
     def __init__(self):
         self._types = Comment()
         self._splitter = Splitter()
 
     def tokenize(self, row):
-        commented = False
+        self._commented = False
+        self._heading = False
         for index, token in enumerate(self._splitter.split(row)):
-            index, separator = divmod(index-1, 2)
-            commented = commented or token.startswith('#')
-            if commented:
-                yield (token, COMMENT)
-            elif separator:
-                yield (token, SEPARATOR)
-            elif index == 0 and token.startswith('*'):
-                table = token.strip().strip('*').replace(' ', '').rstrip('s').lower()
-                self._types = {'setting': Setting(),
-                        'variable': Variable(),
-                         'testcase': TestCase(),
-                         'keyword': Keyword()}.get(table, Comment())
-                yield (token, HEADING)
-            else:
-                yield (token, self._types.get(token, index))
+            type = self._get_type(token, index)
             self._types.end_of_line()
+            yield token, type
+
+    def _get_type(self, token, index):
+        if token.startswith('#'):
+            self._commented = True
+        if self._commented:
+            return COMMENT
+        index, separator = divmod(index-1, 2)
+        if separator:
+            return SEPARATOR
+        if index == 0 and token.startswith('*'):
+            self._types = self._start_table(token)
+            self._heading = True
+        if self._heading:
+            return HEADING
+        return self._types.get(token, index)
+
+    def _start_table(self, name):
+        name = name.strip().replace('*', '').replace(' ', '').lower()
+        return self._tables.get(name, Comment)()
 
 
 # Following code copied directly from Robot Framework 2.7.5.
