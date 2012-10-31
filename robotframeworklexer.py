@@ -24,8 +24,7 @@ VAR_BASE = Name
 VAR_DECO = Name.Variable
 ARGUMENT = Name
 COMMENT = Comment
-PIPE = Generic.Heading
-SPACES = Text
+SEPARATOR = Generic.Heading
 NAME = Generic.Subheading
 KW_NAME = Name.Function
 SYNTAX = Name
@@ -85,19 +84,20 @@ class Keyword(TestCase):
 class Splitter(object):
     _space_splitter = re.compile('( {2,})')
     _pipe_splitter = re.compile('( +\| +)')
-    _pipe_start = re.compile('(^\| +)')
+    _pipe_start = re.compile('^(\| +)')
     _pipe_end = re.compile('( +\| *\n)')
 
-    def split(self, row, pipes=False):
-        if pipes:
-            return self.split_from_pipes(row)
-        return self.split_from_spaces(row)
+    def split(self, row):
+        if self._pipe_start.match(row):
+            return self._split_from_pipes(row)
+        return self._split_from_spaces(row)
 
-    def split_from_spaces(self, row):
+    def _split_from_spaces(self, row):
+        yield u''  # Yield elements same way as when pipe is separator
         for token in self._space_splitter.split(row):
             yield token
 
-    def split_from_pipes(self, row):
+    def _split_from_pipes(self, row):
         _, start, row = self._pipe_start.split(row)
         yield start
         if self._pipe_end.search(row):
@@ -135,7 +135,6 @@ class VariableTokenizer(object):
 
 
 class RobotFrameworkLexer(Lexer):
-    flags = re.IGNORECASE | re.MULTILINE
     name = 'RobotFrameworkLexer'
     aliases = ['robotframework']
     filenames = ['*.txt']
@@ -149,15 +148,14 @@ class RobotFrameworkLexer(Lexer):
         position = 0   # Who uses this???
         var_tokenizer = VariableTokenizer()
         for line in text.splitlines(True):
-            pipes = line.startswith('| ')
             commented = False
-            for index, token in enumerate(splitter.split(line, pipes)):
-                index, separator = divmod(index - (1 if pipes else 0), 2)
+            for index, token in enumerate(splitter.split(line)):
+                index, separator = divmod(index-1, 2)
                 commented = commented or token.startswith('#')
                 if commented:
                     yield (position, COMMENT, token)
                 elif separator:
-                    yield (position, PIPE, token)
+                    yield (position, SEPARATOR, token)
                 elif index == 0 and token.startswith('*'):
                     table = token.strip().strip('*').replace(' ', '').rstrip('s').lower()
                     types = {'setting': Setting(),
