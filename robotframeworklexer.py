@@ -116,7 +116,7 @@ class VariableTokenizer(object):
 
     def tokenize(self, string, type):
         # TODO: cleanup, enhance, and unit test
-        if not self._start.search(string):
+        if type is COMMENT or not self._start.search(string):
             yield string, type
             return
         before, start, after = self._start.split(string, 1)
@@ -143,31 +143,41 @@ class RobotFrameworkLexer(Lexer):
         Lexer.__init__(self, tabsize=2, encoding='UTF-8')
 
     def get_tokens_unprocessed(self, text):
-        types = Comment()
-        splitter = Splitter()
-        position = 0   # Who uses this???
+        row_tokenizer = RowTokenizer()
         var_tokenizer = VariableTokenizer()
-        for line in text.splitlines(True):
-            commented = False
-            for index, token in enumerate(splitter.split(line)):
-                index, separator = divmod(index-1, 2)
-                commented = commented or token.startswith('#')
-                if commented:
-                    yield (position, COMMENT, token)
-                elif separator:
-                    yield (position, SEPARATOR, token)
-                elif index == 0 and token.startswith('*'):
-                    table = token.strip().strip('*').replace(' ', '').rstrip('s').lower()
-                    types = {'setting': Setting(),
-                             'variable': Variable(),
-                             'testcase': TestCase(),
-                             'keyword': Keyword()}.get(table, Comment())
-                    yield (position, HEADING, token)
-                else:
-                    type = types.get(token, index)
-                    for token, type in var_tokenizer.tokenize(token, type):
-                        yield (position, type, token)
-            types.end_of_line()
+        position = 0
+        for row in text.splitlines(True):
+            for token, type in row_tokenizer.tokenize(row):
+                for token, type in var_tokenizer.tokenize(token, type):
+                    yield (position, type, token)
+                    position += len(token)
+
+
+class RowTokenizer(object):
+
+    def __init__(self):
+        self._types = Comment()
+        self._splitter = Splitter()
+
+    def tokenize(self, row):
+        commented = False
+        for index, token in enumerate(self._splitter.split(row)):
+            index, separator = divmod(index-1, 2)
+            commented = commented or token.startswith('#')
+            if commented:
+                yield (token, COMMENT)
+            elif separator:
+                yield (token, SEPARATOR)
+            elif index == 0 and token.startswith('*'):
+                table = token.strip().strip('*').replace(' ', '').rstrip('s').lower()
+                self._types = {'setting': Setting(),
+                        'variable': Variable(),
+                         'testcase': TestCase(),
+                         'keyword': Keyword()}.get(table, Comment())
+                yield (token, HEADING)
+            else:
+                yield (token, self._types.get(token, index))
+            self._types.end_of_line()
 
 
 # Following code copied directly from Robot Framework 2.7.5.
