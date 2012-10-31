@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
 
