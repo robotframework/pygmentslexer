@@ -45,7 +45,7 @@ class RobotFrameworkLexer(Lexer):
         for row in text.splitlines(True):
             for token, type in row_tokenizer.tokenize(row):
                 for token, type in var_tokenizer.tokenize(token, type):
-                    yield (position, type, token)
+                    yield position, type, token
                     position += len(token)
 
 
@@ -53,26 +53,27 @@ class VariableTokenizer(object):
 
     def tokenize(self, string, type):
         var = VariableSplitter(string, identifiers='$@')
-        if type is COMMENT or var.start < 0:
+        if var.start < 0 or type is COMMENT:
             yield string, type
             return
-        before = string[:var.start]
-        if before:
-            yield before, type
-        yield var.identifier + u'{', VAR_DECO
-        for token, type in self.tokenize(var.base, VAR_BASE):
+        for token, type in self._tokenize(var, string, type):
             if token:
                 yield token, type
+
+    def _tokenize(self, var, string, type):
+        before = string[:var.start]
+        yield before, type
+        yield var.identifier + u'{', VAR_DECO
+        for token, type in self.tokenize(var.base, VAR_BASE):
+            yield token, type
         yield u'}', VAR_DECO
         if var.index:
             yield u'[', VAR_DECO
             for token, type in self.tokenize(var.index, VAR_BASE):
-                if token:
-                    yield token, type
+                yield token, type
             yield u']', VAR_DECO
         for token, type in self.tokenize(string[var.end:], type):
-            if token:
-                yield token, type
+            yield token, type
 
 
 class RowTokenizer(object):
@@ -103,7 +104,7 @@ class RowTokenizer(object):
                 self._table = self._start_table(token)
                 heading = True
             type = self._get_type(commented, separator, heading, token, index)
-            yield (token, type)
+            yield token, type
         self._table.end_of_row()
 
     def _start_table(self, header):
