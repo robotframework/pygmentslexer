@@ -27,6 +27,10 @@ class TestVariableFinder(unittest.TestCase):
         self._verify('@{my var}',
                      ('@{', VAR_DECO), ('my var', VAR_BASE), ('}', VAR_DECO))
 
+    def test_environment_variable(self):
+        self._verify('%{VAR_NAME}',
+                     ('%{', VAR_DECO), ('VAR_NAME', VAR_BASE), ('}', VAR_DECO))
+
     def test_normal_texst_and_variable(self):
         self._verify("can haz @{var}?!??!!",
                      ('can haz ', ARGUMENT),
@@ -49,8 +53,8 @@ class TestVariableFinder(unittest.TestCase):
         self._verify('${var${inside}}',
                      ('${', VAR_DECO), ('var', VAR_BASE), ('${', VAR_DECO),
                      ('inside', VAR_BASE), ('}', VAR_DECO), ('}', VAR_DECO))
-        self._verify('@{${var${not}}',
-                     ('@{', VAR_DECO), ('${', VAR_DECO), ('var${not', VAR_BASE),
+        self._verify('@{%{var${not}}',
+                     ('@{', VAR_DECO), ('%{', VAR_DECO), ('var${not', VAR_BASE),
                      ('}', VAR_DECO), ('}', VAR_DECO))
 
     def test_list_var_index(self):

@@ -52,7 +52,7 @@ class RobotFrameworkLexer(Lexer):
 class VariableTokenizer(object):
 
     def tokenize(self, string, type):
-        var = VariableSplitter(string, identifiers='$@')
+        var = VariableSplitter(string, identifiers='$@%')
         if var.start < 0 or type is COMMENT:
             yield string, type
             return
