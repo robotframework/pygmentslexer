@@ -14,14 +14,14 @@ This too    is comment.
 
 *variable
 ${VARIABLE}    value
-@{VARIABLE}    value 1    this ${var} is    \${not}    \\${var}    # comment
+@{VARIABLE}    value 1    ${var}    \${not}    \\${var}    \\\${not}    # comment
 ${VARIABLE}    value # not comment
 
 #| @{VARIABLE} | value 1 | value 2 | value 3
 | @{VARIABLE} | value 1 | value 2 | value 3 | # comment | here |
 |    @{VARIABLE}    |     value  1     | value 2 | value 3
-| @{VARIABLE} | value 1 | value 2 | value 3|
-| @{VARIABLE} | value 1 | value 2 | value 3 |
+| @{VARIABLE} | ${var${inside}} | @{${var${not}} | value 3|
+| @{VARIABLE} | @{VARIABLE}[0] | @{VARIABLE}[${i}] | value 3 |
 
 
 | *** Test Case *** | *** Action *** | *** Argument *** |

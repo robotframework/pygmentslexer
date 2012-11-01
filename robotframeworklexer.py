@@ -50,25 +50,27 @@ class RobotFrameworkLexer(Lexer):
 
 
 class VariableTokenizer(object):
-    _start = re.compile(r'(\\*[$@]\{)')
-    _end = u'}'
 
     def tokenize(self, string, type):
-        # TODO: cleanup, enhance, and unit test
-        if type is COMMENT or not self._start.search(string):
+        var = VariableSplitter(string, identifiers='$@')
+        if type is COMMENT or var.start < 0:
             yield string, type
             return
-        before, start, after = self._start.split(string, 1)
-        if self._end not in after:
-            yield string, type
-            return
+        before = string[:var.start]
         if before:
             yield before, type
-        base, after = after.split(self._end, 1)
-        yield start, VAR_DECO
-        yield base, VAR_BASE
-        yield self._end, VAR_DECO
-        for token, type in self.tokenize(after, type):
+        yield var.identifier + u'{', VAR_DECO
+        for token, type in self.tokenize(var.base, VAR_BASE):
+            if token:
+                yield token, type
+        yield u'}', VAR_DECO
+        if var.index:
+            yield u'[', VAR_DECO
+            for token, type in self.tokenize(var.index, VAR_BASE):
+                if token:
+                    yield token, type
+            yield u']', VAR_DECO
+        for token, type in self.tokenize(string[var.end:], type):
             if token:
                 yield token, type
 
