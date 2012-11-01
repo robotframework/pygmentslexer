@@ -1,4 +1,4 @@
-#  Copyright 2008-2012 Nokia Siemens Networks Oyj
+#  Copyright 2012 Nokia Siemens Networks Oyj
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -174,19 +174,24 @@ class TestCaseTable(TypeGetter):
     _types = [NAME, KW_NAME, ARGUMENT]
 
     def __init__(self):
-        self._assign = []
         self._keyword_found = False
+        self._assigns = 0
 
     def get_type(self, token, index):
-        if index == 1 and token.startswith('[') and token.endswith(']'):
+        if index == 1 and self._is_setting(token):
             return SETTING
-        if not self._keyword_found and \
-            token.startswith(('${', '@{')) and token.rstrip(' =').endswith('}'):
-            self._assign.append(token)
+        if not self._keyword_found and self._is_assign(token):
+            self._assigns += 1
             return SYNTAX  # VariableTokenizer tokenizes this later.
         if index > 0:
             self._keyword_found = True
-        return TypeGetter.get_type(self, token, index - len(self._assign))
+        return TypeGetter.get_type(self, token, index - self._assigns)
+
+    def _is_setting(self, token):
+        return token.startswith('[') and token.endswith(']')
+
+    def _is_assign(self, token):
+        return token.startswith(('${', '@{')) and token.rstrip(' =').endswith('}')
 
     def end_of_row(self):
         self.__init__()
