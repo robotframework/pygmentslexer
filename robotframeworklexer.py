@@ -45,8 +45,9 @@ class RobotFrameworkLexer(Lexer):
         for row in text.splitlines(True):
             for token, type in row_tokenizer.tokenize(row):
                 for token, type in var_tokenizer.tokenize(token, type):
-                    yield position, type, token
-                    position += len(token)
+                    if token:
+                        yield position, type, unicode(token)
+                        position += len(token)
 
 
 class VariableTokenizer(object):
@@ -60,19 +61,19 @@ class VariableTokenizer(object):
             if token:
                 yield token, type
 
-    def _tokenize(self, var, string, type):
+    def _tokenize(self, var, string, orig_type):
         before = string[:var.start]
-        yield before, type
-        yield var.identifier + u'{', VAR_DECO
+        yield before, orig_type
+        yield var.identifier + '{', VAR_DECO
         for token, type in self.tokenize(var.base, VAR_BASE):
             yield token, type
-        yield u'}', VAR_DECO
+        yield '}', VAR_DECO
         if var.index:
-            yield u'[', VAR_DECO
+            yield '[', VAR_DECO
             for token, type in self.tokenize(var.index, VAR_BASE):
                 yield token, type
-            yield u']', VAR_DECO
-        for token, type in self.tokenize(string[var.end:], type):
+            yield ']', VAR_DECO
+        for token, type in self.tokenize(string[var.end:], orig_type):
             yield token, type
 
 
@@ -97,6 +98,7 @@ class RowTokenizer(object):
         commented = False
         heading = False
         for index, token in enumerate(self._splitter.split(row)):
+            # First token, and every second after that, is a separator.
             index, separator = divmod(index-1, 2)
             if token.startswith('#'):
                 commented = True
@@ -121,7 +123,6 @@ class RowTokenizer(object):
         return self._table.get_type(token, index)
 
 
-
 class Splitter(object):
     _space_splitter = re.compile('( {2,})')
     _pipe_splitter = re.compile('( +\| +)')
@@ -134,7 +135,7 @@ class Splitter(object):
         return self._split_from_spaces(row)
 
     def _split_from_spaces(self, row):
-        yield u''  # Yield elements same way as when pipe is separator
+        yield ''  # Start with (pseudo)separator similarly as with pipes
         for token in self._space_splitter.split(row):
             yield token
 
@@ -144,11 +145,10 @@ class Splitter(object):
         if self._pipe_end.search(row):
             row, end, _ = self._pipe_end.split(row)
         else:
-            end = None
+            end = ''
         for token in self._pipe_splitter.split(row):
             yield token
-        if end:
-            yield end
+        yield end
 
 
 class TypeGetter(object):
@@ -183,7 +183,7 @@ class TestCaseTable(TypeGetter):
         if not self._keyword_found and \
             token.startswith(('${', '@{')) and token.rstrip(' =').endswith('}'):
             self._assign.append(token)
-            return SYNTAX  # VariableFinder tokenizes this later
+            return SYNTAX  # VariableTokenizer tokenizes this later.
         if index > 0:
             self._keyword_found = True
         return TypeGetter.get_type(self, token, index - len(self._assign))

@@ -38,11 +38,10 @@ class TestVariableFinder(unittest.TestCase):
                      ('?!??!!', ARGUMENT))
 
     def test_string_with_multiple_variables(self):
-        self._verify("${var} + ${bar}&@{x}",
+        self._verify("${var} + ${bar}@{x}",
                      ('${', VAR_DECO), ('var', VAR_BASE), ('}', VAR_DECO),
                      (' + ', ARGUMENT),
                      ('${', VAR_DECO), ('bar', VAR_BASE), ('}', VAR_DECO),
-                     ('&', ARGUMENT),
                      ('@{', VAR_DECO), ('x', VAR_BASE), ('}', VAR_DECO))
 
     def test_escaping(self):
@@ -53,9 +52,9 @@ class TestVariableFinder(unittest.TestCase):
         self._verify('${var${inside}}',
                      ('${', VAR_DECO), ('var', VAR_BASE), ('${', VAR_DECO),
                      ('inside', VAR_BASE), ('}', VAR_DECO), ('}', VAR_DECO))
-        self._verify('@{%{var${not}}',
+        self._verify('@{%{var${not}} end',
                      ('@{', VAR_DECO), ('%{', VAR_DECO), ('var${not', VAR_BASE),
-                     ('}', VAR_DECO), ('}', VAR_DECO))
+                     ('}', VAR_DECO), ('}', VAR_DECO), (' end', ARGUMENT))
 
     def test_list_var_index(self):
         self._verify('${var}[0] is not special',
@@ -67,7 +66,7 @@ class TestVariableFinder(unittest.TestCase):
                      (' is special', ARGUMENT))
 
     def test_list_var_index_with_variable(self):
-        self._verify('@{var}[${i}]',
+        self._verify('@{var}[${i}] end',
                      ('@{', VAR_DECO), ('var', VAR_BASE), ('}', VAR_DECO),
                      ('[', VAR_DECO), ('${', VAR_DECO), ('i', VAR_BASE),
-                     ('}', VAR_DECO), (']', VAR_DECO))
+                     ('}', VAR_DECO), (']', VAR_DECO), (' end', ARGUMENT))
