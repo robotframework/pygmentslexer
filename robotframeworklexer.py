@@ -42,7 +42,7 @@ class RobotFrameworkLexer(Lexer):
         row_tokenizer = RowTokenizer()
         var_tokenizer = VariableTokenizer()
         position = 0
-        for row in text.splitlines(True):
+        for row in text.splitlines():
             for token, type in row_tokenizer.tokenize(row):
                 for token, type in var_tokenizer.tokenize(token, type):
                     if token:
@@ -110,7 +110,7 @@ class RowTokenizer(object):
         self._table.end_of_element()
 
     def _start_table(self, header):
-        name = header.strip().replace('*', '').replace(' ', '').lower()
+        name = header.replace('*', '').replace(' ', '').lower()
         return self._tables.get(name, CommentTable)()
 
     def _get_type(self, commented, separator, heading, token):
@@ -130,6 +130,11 @@ class Splitter(object):
     _pipe_end = re.compile('( +\| *\n)')
 
     def split(self, row):
+        for token in self._split(row.rstrip()):
+            yield token
+        yield '\n'
+
+    def _split(self, row):
         if self._pipe_start.match(row):
             return self._split_from_pipes(row)
         return self._split_from_spaces(row)
@@ -204,8 +209,7 @@ class TestCaseTable(TypeGetter):
         return token.startswith('[') and token.endswith(']')
 
     def _is_assign(self, token):
-        # TODO: Would be better to remove newlines earlier
-        return token.startswith(('${', '@{')) and token.strip().rstrip(' =').endswith('}')
+        return token.startswith(('${', '@{')) and token.rstrip(' =').endswith('}')
 
 
 class KeywordTable(TestCaseTable):
