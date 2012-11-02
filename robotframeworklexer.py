@@ -105,26 +105,22 @@ class RowTokenizer(object):
             elif index == 0 and token.startswith('*'):
                 self._table = self._start_table(token)
                 heading = True
-            if index < 2 and token == '...':
-                self._table = self._table.continue_element()
-                type = SYNTAX
-            else:
-                type = self._get_type(commented, separator, heading, token)
+            type = self._get_type(commented, separator, heading, token, index)
             yield token, type
-        self._table = self._table.end_row()
+        self._table.end_row()
 
     def _start_table(self, header):
         name = header.replace('*', '').replace(' ', '').lower()
         return self._tables.get(name, CommentTable)()
 
-    def _get_type(self, commented, separator, heading, token):
+    def _get_type(self, commented, separator, heading, token, index):
         if commented:
             return COMMENT
         if separator:
             return SEPARATOR
         if heading:
             return HEADING
-        return self._table.next_type(token)
+        return self._table.get_type(token, index)
 
 
 class Splitter(object):
@@ -163,47 +159,40 @@ class Splitter(object):
 class TypeGetter(object):
     _types = None
 
-    def __init__(self, parent=None):
-        self._parent = parent or self
+    def __init__(self):
         self._index = 0
 
     def next_type(self, token):
         index = self._index
         self._index += 1
-        return self.get_type(token, index)
+        return self._get_type(token, index)
 
-    def get_type(self, token, index):
+    def _get_type(self, token, index):
         index = min(index, len(self._types) - 1)
         return self._types[index]
 
-    def end_row(self):
-        return self.__class__(self)
 
-    def continue_element(self):
-        return self._parent
-
-
-class CommentTable(TypeGetter):
+class Comment(TypeGetter):
     _types = [COMMENT]
 
 
-class VariableTable(TypeGetter):
-    _types = [VAR_BASE, ARGUMENT]
-
-
-class SettingTable(TypeGetter):
+class Setting(TypeGetter):
     _types = [SETTING, ARGUMENT]
 
 
-class TestCaseTable(TypeGetter):
+class Variable(TypeGetter):
+    _types = [VAR_BASE, ARGUMENT]
+
+
+class TestCase(TypeGetter):
     _types = [NAME, KW_NAME, ARGUMENT]
 
-    def __init__(self, parent=None):
-        TypeGetter.__init__(self, parent)
+    def __init__(self):
+        TypeGetter.__init__(self)
         self._keyword_found = False
         self._assigns = 0
 
-    def get_type(self, token, index):
+    def _get_type(self, token, index):
         if index == 1 and self._is_setting(token):
             return SETTING
         if not self._keyword_found and self._is_assign(token):
@@ -211,7 +200,7 @@ class TestCaseTable(TypeGetter):
             return SYNTAX  # VariableTokenizer tokenizes this later.
         if index > 0:
             self._keyword_found = True
-        return TypeGetter.get_type(self, token, index - self._assigns)
+        return TypeGetter._get_type(self, token, index - self._assigns)
 
     def _is_setting(self, token):
         return token.startswith('[') and token.endswith(']')
@@ -220,8 +209,57 @@ class TestCaseTable(TypeGetter):
         return token.startswith(('${', '@{')) and token.rstrip(' =').endswith('}')
 
 
-class KeywordTable(TestCaseTable):
+class Keyword(TestCase):
     pass
+
+
+class _Table(object):
+    _type_getter_class = None
+    _continue_index = -1
+
+    def __init__(self):
+        self._type_getter = self._type_getter_class()
+        self._prev_type_getter = None
+
+    def _get_type_getter(self):
+        return None
+
+    def get_type(self, token, index):
+        if index == self._continue_index and token == '...':
+            self._type_getter = self._prev_type_getter
+            return SYNTAX
+        return self._get_type(token)
+
+    def _get_type(self, token):
+        return self._type_getter.next_type(token)
+
+    def end_row(self):
+        self._prev_type_getter = self._type_getter
+        self._type_getter = self._type_getter_class()
+
+
+class CommentTable(_Table):
+    _type_getter_class = Comment
+
+
+class VariableTable(_Table):
+    _type_getter_class = Variable
+    _continue_index = 0
+
+
+class SettingTable(_Table):
+    _type_getter_class = Setting
+    _continue_index = 0
+
+
+class TestCaseTable(_Table):
+    _type_getter_class = TestCase
+    _continue_index = 1
+
+
+class KeywordTable(_Table):
+    _type_getter_class = Keyword
+    _continue_index = 1
 
 
 # Following code copied directly from Robot Framework 2.7.5.
