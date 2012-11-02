@@ -127,7 +127,7 @@ class Splitter(object):
     _space_splitter = re.compile('( {2,})')
     _pipe_splitter = re.compile('( +\| +)')
     _pipe_start = re.compile('^(\| +)')
-    _pipe_end = re.compile('( +\| *\n)')
+    _pipe_end = re.compile('( +\|)$')
 
     def split(self, row):
         for token in self._split(row.rstrip()):
