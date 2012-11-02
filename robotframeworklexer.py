@@ -162,6 +162,10 @@ class TypeGetter(object):
         pass
 
 
+class CommentTable(TypeGetter):
+    _types = [COMMENT]
+
+
 class VariableTable(TypeGetter):
     _types = [VAR_BASE, ARGUMENT]
 
@@ -195,10 +199,6 @@ class TestCaseTable(TypeGetter):
 
     def end_of_row(self):
         self.__init__()
-
-
-class CommentTable(TypeGetter):
-    _types = [COMMENT]
 
 
 class KeywordTable(TestCaseTable):
