@@ -105,22 +105,22 @@ class RowTokenizer(object):
             elif index == 0 and token.startswith('*'):
                 self._table = self._start_table(token)
                 heading = True
-            type = self._get_type(commented, separator, heading, token, index)
+            type = self._get_type(commented, separator, heading, token)
             yield token, type
-        self._table.end_of_row()
+        self._table.end_of_element()
 
     def _start_table(self, header):
         name = header.strip().replace('*', '').replace(' ', '').lower()
         return self._tables.get(name, CommentTable)()
 
-    def _get_type(self, commented, separator, heading, token, index):
+    def _get_type(self, commented, separator, heading, token):
         if commented:
             return COMMENT
         if separator:
             return SEPARATOR
         if heading:
             return HEADING
-        return self._table.get_type(token, index)
+        return self._table.next_type(token)
 
 
 class Splitter(object):
@@ -154,12 +154,20 @@ class Splitter(object):
 class TypeGetter(object):
     _types = None
 
+    def __init__(self):
+        self._index = 0
+
+    def next_type(self, token):
+        index = self._index
+        self._index += 1
+        return self.get_type(token, index)
+
     def get_type(self, token, index):
-        index = index if index < len(self._types) else -1
+        index = min(index, len(self._types) - 1)
         return self._types[index]
 
-    def end_of_row(self):
-        pass
+    def end_of_element(self):
+        self.__init__()
 
 
 class CommentTable(TypeGetter):
@@ -178,6 +186,7 @@ class TestCaseTable(TypeGetter):
     _types = [NAME, KW_NAME, ARGUMENT]
 
     def __init__(self):
+        TypeGetter.__init__(self)
         self._keyword_found = False
         self._assigns = 0
 
@@ -195,10 +204,8 @@ class TestCaseTable(TypeGetter):
         return token.startswith('[') and token.endswith(']')
 
     def _is_assign(self, token):
-        return token.startswith(('${', '@{')) and token.rstrip(' =').endswith('}')
-
-    def end_of_row(self):
-        self.__init__()
+        # TODO: Would be better to remove newlines earlier
+        return token.startswith(('${', '@{')) and token.strip().rstrip(' =').endswith('}')
 
 
 class KeywordTable(TestCaseTable):
