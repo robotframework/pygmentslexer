@@ -5,7 +5,8 @@ Documentation    Hyvää päivää
 Library    XML
 Resource   foobar.txt    # comment
 
-| Force tags  |  regression  |  ${var}
+| Force tags  |  regression  | ${var}
+| ...         |  more        | tags |
 # comment
 
 *** Unknown table ***
@@ -15,7 +16,7 @@ This too    is comment.
 *variable
 ${VARIABLE}    value
 @{VARIABLE}    value 1    ${var}    \${not}    \\${var}    \\\${not}    # comment
-${VARIABLE}    value # not comment
+...            value # not comment
 
 #| @{VARIABLE} | value 1 | value 2 | value 3
 | @{VARIABLE} | value 1 | value 2 | value 3 | # comment | here |
@@ -35,6 +36,23 @@ Example 2    [Documentation]    example
     ${var} =    keyword
     ${var}    keyword    ${arg}   ${two} vars ${here}    arg   arg    arg
     ${v1}    ${v2}    @{v3} =    keyword
+
+Split
+    Keyword    arg1
+    ...    ${arg2}
+    ${var} =    Keyword    arg1
+    ...    ${arg2}
+    ${var} =
+    ...    Keyword    arg1
+    ...    ${arg2}
+    ${var1}    ${var2} =    Keyword    arg1
+    ...    ${arg2}
+    ${var1}
+    ...    ${var2} =
+    ...    Keyword    arg1    ${arg2}
+    ...    arg3
+    ...
+    ...    arg4
 
 
 *** Keywords ***    Heading    # Comment     here

@@ -105,9 +105,13 @@ class RowTokenizer(object):
             elif index == 0 and token.startswith('*'):
                 self._table = self._start_table(token)
                 heading = True
-            type = self._get_type(commented, separator, heading, token)
+            if index < 2 and token == '...':
+                self._table = self._table.continue_element()
+                type = SYNTAX
+            else:
+                type = self._get_type(commented, separator, heading, token)
             yield token, type
-        self._table.end_of_element()
+        self._table = self._table.end_row()
 
     def _start_table(self, header):
         name = header.replace('*', '').replace(' ', '').lower()
@@ -159,7 +163,8 @@ class Splitter(object):
 class TypeGetter(object):
     _types = None
 
-    def __init__(self):
+    def __init__(self, parent=None):
+        self._parent = parent or self
         self._index = 0
 
     def next_type(self, token):
@@ -171,8 +176,11 @@ class TypeGetter(object):
         index = min(index, len(self._types) - 1)
         return self._types[index]
 
-    def end_of_element(self):
-        self.__init__()
+    def end_row(self):
+        return self.__class__(self)
+
+    def continue_element(self):
+        return self._parent
 
 
 class CommentTable(TypeGetter):
@@ -190,8 +198,8 @@ class SettingTable(TypeGetter):
 class TestCaseTable(TypeGetter):
     _types = [NAME, KW_NAME, ARGUMENT]
 
-    def __init__(self):
-        TypeGetter.__init__(self)
+    def __init__(self, parent=None):
+        TypeGetter.__init__(self, parent)
         self._keyword_found = False
         self._assigns = 0
 
