@@ -19,15 +19,15 @@ from pygments.token import *
 
 
 HEADING = Generic.Heading
-SETTING = Generic.Subheading
+SETTING = Keyword.Namespace
+NAME = Generic.Subheading
+KEYWORD = Name.Function
+ARGUMENT = String
 VAR_BASE = Name
 VAR_DECO = Name.Variable
-ARGUMENT = Name
 COMMENT = Comment
-SEPARATOR = Generic.Heading
-NAME = Generic.Subheading
-KW_NAME = Name.Function
-SYNTAX = Error
+SEPARATOR = Punctuation
+SYNTAX = Punctuation
 
 
 class RobotFrameworkLexer(Lexer):
@@ -185,7 +185,7 @@ class Variable(TypeGetter):
 
 
 class KeywordCall(TypeGetter):
-    _types = [KW_NAME, ARGUMENT]
+    _types = [KEYWORD, ARGUMENT]
 
     def __init__(self):
         TypeGetter.__init__(self)
