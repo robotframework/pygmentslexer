@@ -27,7 +27,7 @@ COMMENT = Comment
 SEPARATOR = Generic.Heading
 NAME = Generic.Subheading
 KW_NAME = Name.Function
-SYNTAX = Name
+SYNTAX = Error
 
 
 class RobotFrameworkLexer(Lexer):
@@ -219,43 +219,55 @@ class ForLoop(TypeGetter):
 
 class _Table(object):
     _type_getter_class = None
-    _continue_index = -1
 
-    def __init__(self):
+    def __init__(self, prev_type_getter=None):
         self._type_getter = self._type_getter_class()
-        self._prev_type_getter = None
+        self._prev_type_getter = prev_type_getter
+        self._prev_tokens_in_row = []
 
     def get_type(self, token, index):
-        if index == self._continue_index and token == '...':
+        if self._continues(token, index):
             self._type_getter = self._prev_type_getter
-            return SYNTAX
-        return self._get_type(token, index)
+            ret = SYNTAX
+        else:
+            ret = self._get_type(token, index)
+        self._prev_tokens_in_row.append(token)
+        return ret
+
+    def _continues(self, token, index):
+        return token == '...' \
+                and all(self._is_empty(t) for t in self._prev_tokens_in_row)
+
+    def _is_empty(self, token):
+        return token in ['', '\\']
 
     def _get_type(self, token, index):
         return self._type_getter.next_type(token)
 
     def end_row(self):
-        self._prev_type_getter = self._type_getter
-        self._type_getter = self._type_getter_class()
+        self.__init__(prev_type_getter=self._type_getter)
 
 
 class CommentTable(_Table):
     _type_getter_class = Comment
 
+    def _continues(self, token, index):
+        return False
+
 
 class VariableTable(_Table):
     _type_getter_class = Variable
-    _continue_index = 0
 
 
 class SettingTable(_Table):
     _type_getter_class = Setting
-    _continue_index = 0
 
 
 class TestCaseTable(_Table):
     _type_getter_class = KeywordCall
-    _continue_index = 1
+
+    def _continues(self, token, index):
+        return index > 0 and _Table._continues(self, token, index)
 
     def _get_type(self, token, index):
         if index == 0:
@@ -275,12 +287,10 @@ class TestCaseTable(_Table):
         return token.startswith(':') and \
                 token.upper().replace(':', '').strip() == 'FOR'
 
-    def _is_empty(self, token):
-        return token in ['', '\\']
-
 
 class KeywordTable(TestCaseTable):
     pass
+
 
 # Following code copied directly from Robot Framework 2.7.5.
 
