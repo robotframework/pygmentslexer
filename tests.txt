@@ -56,8 +56,13 @@ Example 2    [Documentation]    example
 
 :FOR
     :FOR    ${x}    IN    ${1}    two    3
+    ...    neljä    ${6} - 1
     \    Log    ${x}
-    \    ${y} =    Keyword    ${x}
+    :: FOR    ${i}
+    ...    In Range    42
+    \    ${ret} =    Keyword    ${i}
+    \    ...    more    args
+
 
 *** Keywords ***    Heading    # Comment     here
 

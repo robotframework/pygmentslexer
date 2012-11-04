@@ -184,8 +184,8 @@ class Variable(TypeGetter):
     _types = [VAR_BASE, ARGUMENT]
 
 
-class TestCase(TypeGetter):
-    _types = [NAME, KW_NAME, ARGUMENT]
+class KeywordCall(TypeGetter):
+    _types = [KW_NAME, ARGUMENT]
 
     def __init__(self):
         TypeGetter.__init__(self)
@@ -193,8 +193,6 @@ class TestCase(TypeGetter):
         self._assigns = 0
 
     def _get_type(self, token, index):
-        if index == 1 and self._is_setting(token):
-            return SETTING
         if not self._keyword_found and self._is_assign(token):
             self._assigns += 1
             return SYNTAX  # VariableTokenizer tokenizes this later.
@@ -202,15 +200,21 @@ class TestCase(TypeGetter):
             self._keyword_found = True
         return TypeGetter._get_type(self, token, index - self._assigns)
 
-    def _is_setting(self, token):
-        return token.startswith('[') and token.endswith(']')
-
     def _is_assign(self, token):
         return token.startswith(('${', '@{')) and token.rstrip(' =').endswith('}')
 
 
-class Keyword(TestCase):
-    pass
+class ForLoop(TypeGetter):
+
+    def __init__(self):
+        TypeGetter.__init__(self)
+        self._in_arguments = False
+
+    def _get_type(self, token, index):
+        ret = ARGUMENT if self._in_arguments else SYNTAX
+        if token.upper() in ['IN', 'IN RANGE']:
+            self._in_arguments = True
+        return ret
 
 
 class _Table(object):
@@ -221,16 +225,13 @@ class _Table(object):
         self._type_getter = self._type_getter_class()
         self._prev_type_getter = None
 
-    def _get_type_getter(self):
-        return None
-
     def get_type(self, token, index):
         if index == self._continue_index and token == '...':
             self._type_getter = self._prev_type_getter
             return SYNTAX
-        return self._get_type(token)
+        return self._get_type(token, index)
 
-    def _get_type(self, token):
+    def _get_type(self, token, index):
         return self._type_getter.next_type(token)
 
     def end_row(self):
@@ -253,14 +254,33 @@ class SettingTable(_Table):
 
 
 class TestCaseTable(_Table):
-    _type_getter_class = TestCase
+    _type_getter_class = KeywordCall
     _continue_index = 1
 
+    def _get_type(self, token, index):
+        if index == 0:
+            return NAME
+        if index == 1 and self._is_setting(token):
+            self._type_getter = Setting()
+        if index == 1 and self._is_for_loop(token):
+            self._type_getter = ForLoop()
+        if index == 1 and self._is_empty(token):
+            return SYNTAX
+        return _Table._get_type(self, token, index)
 
-class KeywordTable(_Table):
-    _type_getter_class = Keyword
-    _continue_index = 1
+    def _is_setting(self, token):
+        return token.startswith('[') and token.endswith(']')
 
+    def _is_for_loop(self, token):
+        return token.startswith(':') and \
+                token.upper().replace(':', '').strip() == 'FOR'
+
+    def _is_empty(self, token):
+        return token in ['', '\\']
+
+
+class KeywordTable(TestCaseTable):
+    pass
 
 # Following code copied directly from Robot Framework 2.7.5.
 
