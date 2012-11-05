@@ -82,19 +82,23 @@ class VariableTokenizer(object):
 class RowTokenizer(object):
 
     def __init__(self):
-        self._table = CommentTable()
+        self._table = UnknownTable()
         self._splitter = Splitter()
-        self._tables = {'settings': SettingTable,
-                        'setting': SettingTable,
-                        'metadata': SettingTable,
-                        'variables': VariableTable,
-                        'variable': VariableTable,
-                        'testcases': TestCaseTable,
-                        'testcase': TestCaseTable,
-                        'keywords': KeywordTable,
-                        'keyword': KeywordTable,
-                        'userkeywords': KeywordTable,
-                        'userkeyword': KeywordTable}
+        settings = SettingTable()
+        variables = VariableTable()
+        testcases = TestCaseTable()
+        keywords = KeywordTable()
+        self._tables = {'settings': settings,
+                        'setting': settings,
+                        'metadata': settings,
+                        'variables': variables,
+                        'variable': variables,
+                        'testcases': testcases,
+                        'testcase': testcases,
+                        'keywords': keywords,
+                        'keyword': keywords,
+                        'userkeywords': keywords,
+                        'userkeyword': keywords}
 
     def tokenize(self, row):
         commented = False
@@ -113,7 +117,7 @@ class RowTokenizer(object):
 
     def _start_table(self, header):
         name = header.replace('*', '').replace(' ', '').lower()
-        return self._tables.get(name, CommentTable)()
+        return self._tables.get(name, UnknownTable())
 
     def _tokenize(self, token, index, commented, separator, heading):
         if commented:
@@ -333,7 +337,7 @@ class _Table(object):
         self.__init__(prev_type_getter=self._type_getter)
 
 
-class CommentTable(_Table):
+class UnknownTable(_Table):
     _type_getter_class = Comment
 
     def _continues(self, token, index):
