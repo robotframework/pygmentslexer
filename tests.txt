@@ -16,13 +16,16 @@ Metadata    Name    Value
 
 *** Unknown table ***
 Stuff in non-recognized tables is considered comment.
-This too    is comment.
+This too    is ${comment}.
 
 *variable
-${VARIABLE}    value
-@{VARIABLE}    value 1    ${var}    \${not}    \\${var}    \\\${not}    # comment
-...            value # not comment
+${VARIABLE}       value
+${ASSIGNMENT}=    value
+@{VARIABLE}       value 1    ${var}    \${not}    \\${var}    \\\${not}    # comment
+...               value # not comment
 INVALID    syntax
+${IN} ${VALID}    syntax
+${INV} ==         syntax
 
 #| @{VARIABLE} | value 1 | value 2 | value 3
 | @{VARIABLE} | value 1 | value 2 | value 3 | # comment | here |

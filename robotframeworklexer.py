@@ -64,7 +64,7 @@ class VariableTokenizer(object):
 
     def tokenize(self, string, type):
         var = VariableSplitter(string, identifiers='$@%')
-        if var.start < 0 or type is COMMENT:
+        if var.start < 0 or type in (COMMENT, ERROR):
             yield string, type
             return
         for token, type in self._tokenize(var, string, type):
@@ -189,6 +189,12 @@ class TypeGetter(object):
         index = min(index, len(self._types) - 1)
         return self._types[index]
 
+    def _is_assign(self, token):
+        if token.endswith('='):
+            token = token[:-1].strip()
+        var = VariableSplitter(token, identifiers='$@')
+        return var.start == 0 and var.end == len(token)
+
 
 class Comment(TypeGetter):
     _types = [COMMENT]
@@ -266,7 +272,12 @@ class KeywordSetting(TestCaseSetting):
 
 
 class Variable(TypeGetter):
-    _types = [VAR_BASE, ARGUMENT]
+    _types = [SYNTAX, ARGUMENT]
+
+    def _tokenize(self, token, index):
+        if index == 0 and not self._is_assign(token):
+            return ERROR
+        return TypeGetter._tokenize(self, token, index)
 
 
 class KeywordCall(TypeGetter):
@@ -283,9 +294,6 @@ class KeywordCall(TypeGetter):
             return SYNTAX  # VariableTokenizer tokenizes this later.
         self._keyword_found = True
         return TypeGetter._tokenize(self, token, index - self._assigns)
-
-    def _is_assign(self, token):
-        return token.startswith(('${', '@{')) and token.rstrip(' =').endswith('}')
 
 
 class TemplatedKeywordCall(TypeGetter):
