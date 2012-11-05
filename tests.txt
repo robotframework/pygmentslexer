@@ -2,9 +2,13 @@ Stuff before first table is considered comment.
 ...    and there is no continuing here.
 
 *** Settings ***
-Documentation    Hyvää päivää
-Library    XML
-Resource   foobar.txt    # comment
+Documentation    Hyvää päivää    ${var}
+Library    XML    arg
+Resource   ${foobar}.txt    # comment
+Invalid    syntax
+testsetup   keyword    argument    ${variable}
+Test Teardown   ${keyword}    argument    ${argument}
+Metadata    Name    Value
 
 | Force tags  |  regression  | ${var}
 | ...         |  more        | tags |
@@ -18,11 +22,12 @@ This too    is comment.
 ${VARIABLE}    value
 @{VARIABLE}    value 1    ${var}    \${not}    \\${var}    \\\${not}    # comment
 ...            value # not comment
+INVALID    syntax
 
 #| @{VARIABLE} | value 1 | value 2 | value 3
 | @{VARIABLE} | value 1 | value 2 | value 3 | # comment | here |
 |    @{VARIABLE}    |     value  1     | %{ENV} | value 3
-| @{VARIABLE} | ${var${inside}} | @{${var${not}} | value 3|
+| @{VARIABLE} | ${var${inside}} out} | @{${var${not}} | value 3|
 | @{VARIABLE} | @{VARIABLE}[0] | @{VARIABLE}[${i}] | value 3 |
 
 
@@ -54,6 +59,11 @@ Example 2    [Documentation]    example
     ...    arg3
     ...
     ...    arg4
+
+template
+    [Template]    Keyword Here
+    args       here
+    ${more}    args
 
 :FOR
     :FOR    ${x}    IN    ${1}    two    3

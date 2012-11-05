@@ -20,6 +20,7 @@ from pygments.token import *
 
 HEADING = Generic.Heading
 SETTING = Keyword.Namespace
+IMPORT = Name.Namespace
 NAME = Generic.Subheading
 KEYWORD = Name.Function
 ARGUMENT = String
@@ -28,6 +29,7 @@ VAR_DECO = Name.Variable
 COMMENT = Comment
 SEPARATOR = Punctuation
 SYNTAX = Punctuation
+ERROR = Error
 
 
 class RobotFrameworkLexer(Lexer):
@@ -182,6 +184,38 @@ class Comment(TypeGetter):
 
 class Setting(TypeGetter):
     _types = [SETTING, ARGUMENT]
+    _keyword_settings = ('suitesetup',
+                         'suiteprecondition',
+                         'suiteteardown',
+                         'suitepostcondition',
+                         'testsetup',
+                         'testprecondition',
+                         'testteardown',
+                         'testpostcondition',
+                         'testtemplate')
+    _import_settings = ('library',
+                        'resource',
+                        'variables')
+    _other_settings = ('documentation',
+                       'metadata',
+                       'forcetags',
+                       'defaulttags',
+                       'testtimeout')
+
+    def _tokenize(self, token, index):
+        if index == 0:
+            normalized = token.lower().replace(' ', '')
+            if normalized in self._keyword_settings:
+                self.tokenize = KeywordCall(support_assign=False).tokenize
+            elif normalized in self._import_settings:
+                self.tokenize = ImportSetting().tokenize
+            elif normalized not in self._other_settings:
+                return ERROR
+        return TypeGetter._tokenize(self, token, index)
+
+
+class ImportSetting(TypeGetter):
+    _types = [IMPORT, ARGUMENT]
 
 
 class TestCaseSetting(Setting):
@@ -199,17 +233,16 @@ class Variable(TypeGetter):
 class KeywordCall(TypeGetter):
     _types = [KEYWORD, ARGUMENT]
 
-    def __init__(self):
+    def __init__(self, support_assign=True):
         TypeGetter.__init__(self)
-        self._keyword_found = False
+        self._keyword_found = not support_assign
         self._assigns = 0
 
     def _tokenize(self, token, index):
         if not self._keyword_found and self._is_assign(token):
             self._assigns += 1
             return SYNTAX  # VariableTokenizer tokenizes this later.
-        if index > 0:
-            self._keyword_found = True
+        self._keyword_found = True
         return TypeGetter._tokenize(self, token, index - self._assigns)
 
     def _is_assign(self, token):

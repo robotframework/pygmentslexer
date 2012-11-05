@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
+import sys
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
 
 from robotframeworklexer import RobotFrameworkLexer
 
 
-inpath = 'tests.txt'
-outpath = 'tests.html'
+inpath = 'tests.txt' if len(sys.argv) < 2 else sys.argv[1]
+outpath = 'out.html' if len(sys.argv) < 3 else sys.argv[2]
 
 with open(inpath) as infile:
     with open(outpath, 'w') as outfile:
