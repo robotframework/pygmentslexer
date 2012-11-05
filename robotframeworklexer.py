@@ -105,22 +105,24 @@ class RowTokenizer(object):
             elif index == 0 and token.startswith('*'):
                 self._table = self._start_table(token)
                 heading = True
-            type = self._get_type(commented, separator, heading, token, index)
-            yield token, type
+            for token, type in self._tokenize(token, index, commented, separator, heading):
+                yield token, type
         self._table.end_row()
 
     def _start_table(self, header):
         name = header.replace('*', '').replace(' ', '').lower()
         return self._tables.get(name, CommentTable)()
 
-    def _get_type(self, commented, separator, heading, token, index):
+    def _tokenize(self, token, index, commented, separator, heading):
         if commented:
-            return COMMENT
-        if separator:
-            return SEPARATOR
-        if heading:
-            return HEADING
-        return self._table.get_type(token, index)
+            yield token, COMMENT
+        elif separator:
+            yield token, SEPARATOR
+        elif heading:
+            yield token, HEADING
+        else:
+            for token, type in self._table.tokenize(token, index):
+                yield token, type
 
 
 class Splitter(object):
@@ -162,12 +164,14 @@ class TypeGetter(object):
     def __init__(self):
         self._index = 0
 
-    def next_type(self, token):
-        index = self._index
+    def tokenize(self, token):
+        tokens_and_types = self._tokenize(token, self._index)
         self._index += 1
-        return self._get_type(token, index)
+        if not isinstance(tokens_and_types, list):
+            tokens_and_types = [(token, tokens_and_types)]
+        return tokens_and_types
 
-    def _get_type(self, token, index):
+    def _tokenize(self, token, index):
         index = min(index, len(self._types) - 1)
         return self._types[index]
 
@@ -178,6 +182,14 @@ class Comment(TypeGetter):
 
 class Setting(TypeGetter):
     _types = [SETTING, ARGUMENT]
+
+
+class TestCaseSetting(Setting):
+
+    def _tokenize(self, token, index):
+        if index == 0:
+            return [('[', SYNTAX), (token[1:-1], SETTING), (']', SYNTAX)]
+        return Setting._tokenize(self, token, index)
 
 
 class Variable(TypeGetter):
@@ -192,13 +204,13 @@ class KeywordCall(TypeGetter):
         self._keyword_found = False
         self._assigns = 0
 
-    def _get_type(self, token, index):
+    def _tokenize(self, token, index):
         if not self._keyword_found and self._is_assign(token):
             self._assigns += 1
             return SYNTAX  # VariableTokenizer tokenizes this later.
         if index > 0:
             self._keyword_found = True
-        return TypeGetter._get_type(self, token, index - self._assigns)
+        return TypeGetter._tokenize(self, token, index - self._assigns)
 
     def _is_assign(self, token):
         return token.startswith(('${', '@{')) and token.rstrip(' =').endswith('}')
@@ -210,11 +222,11 @@ class ForLoop(TypeGetter):
         TypeGetter.__init__(self)
         self._in_arguments = False
 
-    def _get_type(self, token, index):
-        ret = ARGUMENT if self._in_arguments else SYNTAX
+    def _tokenize(self, token, index):
+        type = ARGUMENT if self._in_arguments else SYNTAX
         if token.upper() in ['IN', 'IN RANGE']:
             self._in_arguments = True
-        return ret
+        return type
 
 
 class _Table(object):
@@ -225,14 +237,14 @@ class _Table(object):
         self._prev_type_getter = prev_type_getter
         self._prev_tokens_in_row = []
 
-    def get_type(self, token, index):
+    def tokenize(self, token, index):
         if self._continues(token, index):
             self._type_getter = self._prev_type_getter
-            ret = SYNTAX
+            yield token, SYNTAX
         else:
-            ret = self._get_type(token, index)
+            for token_and_type in self._tokenize(token, index):
+                yield token_and_type
         self._prev_tokens_in_row.append(token)
-        return ret
 
     def _continues(self, token, index):
         return token == '...' \
@@ -241,8 +253,8 @@ class _Table(object):
     def _is_empty(self, token):
         return token in ['', '\\']
 
-    def _get_type(self, token, index):
-        return self._type_getter.next_type(token)
+    def _tokenize(self, token, index):
+        return self._type_getter.tokenize(token)
 
     def end_row(self):
         self.__init__(prev_type_getter=self._type_getter)
@@ -269,16 +281,16 @@ class TestCaseTable(_Table):
     def _continues(self, token, index):
         return index > 0 and _Table._continues(self, token, index)
 
-    def _get_type(self, token, index):
+    def _tokenize(self, token, index):
         if index == 0:
-            return NAME
+            return [(token, NAME)]
         if index == 1 and self._is_setting(token):
-            self._type_getter = Setting()
+            self._type_getter = TestCaseSetting()
         if index == 1 and self._is_for_loop(token):
             self._type_getter = ForLoop()
         if index == 1 and self._is_empty(token):
-            return SYNTAX
-        return _Table._get_type(self, token, index)
+            return [(token, SYNTAX)]
+        return _Table._tokenize(self, token, index)
 
     def _is_setting(self, token):
         return token.startswith('[') and token.endswith(']')
