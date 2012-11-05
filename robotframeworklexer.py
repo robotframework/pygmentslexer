@@ -21,11 +21,11 @@ from pygments.token import *
 HEADING = Generic.Heading
 SETTING = Keyword.Namespace
 IMPORT = Name.Namespace
-NAME = Generic.Subheading
+TC_KW_NAME = Generic.Subheading
 KEYWORD = Name.Function
 ARGUMENT = String
-VAR_BASE = Name
-VAR_DECO = Name.Variable
+VAR_BASE = Name.Variable
+VAR_DECO = Punctuation
 COMMENT = Comment
 SEPARATOR = Punctuation
 SYNTAX = Punctuation
@@ -84,9 +84,9 @@ class RowTokenizer(object):
     def __init__(self):
         self._table = UnknownTable()
         self._splitter = Splitter()
-        settings = SettingTable()
-        variables = VariableTable()
         testcases = TestCaseTable()
+        settings = SettingTable(testcases.set_default_template)
+        variables = VariableTable()
         keywords = KeywordTable()
         self._tables = {'settings': settings,
                         'setting': settings,
@@ -207,7 +207,13 @@ class Setting(TypeGetter):
                        'testtimeout')
     _custom_tokenizer = None
 
+    def __init__(self, set_template=None):
+        TypeGetter.__init__(self)
+        self._set_template = set_template
+
     def _tokenize(self, token, index):
+        if index == 1 and self._set_template:
+            self._set_template(token)
         if index == 0:
             normalized = token.lower().replace(' ', '')
             if normalized in self._keyword_settings:
@@ -217,11 +223,8 @@ class Setting(TypeGetter):
             elif normalized not in self._other_settings:
                 return ERROR
         elif self._custom_tokenizer:
-            return self._custom_tokenize(token, index)
+            return self._custom_tokenizer.tokenize(token)
         return TypeGetter._tokenize(self, token, index)
-
-    def _custom_tokenize(self, token, index):
-        return self._custom_tokenizer.tokenize(token)
 
 
 class ImportSetting(TypeGetter):
@@ -244,18 +247,6 @@ class TestCaseSetting(Setting):
             type = Setting._tokenize(self, token[1:-1], index)
             return [('[', SYNTAX), (token[1:-1], type), (']', SYNTAX)]
         return Setting._tokenize(self, token, index)
-
-
-class TemplateSetting(TestCaseSetting):
-
-    def __init__(self, set_template):
-        TestCaseSetting.__init__(self)
-        self._set_template = set_template
-
-    def _custom_tokenize(self, token, index):
-        if index == 1:
-            self._set_template(token)
-        return self._custom_tokenizer.tokenize(token)
 
 
 class KeywordSetting(TestCaseSetting):
@@ -351,14 +342,26 @@ class VariableTable(_Table):
 class SettingTable(_Table):
     _type_getter_class = Setting
 
+    def __init__(self, set_template=None, prev_type_getter=None):
+        _Table.__init__(self, prev_type_getter)
+        if set_template:
+            self._set_template = set_template
+
+    def _tokenize(self, token, index):
+        if index == 0 and token.lower().replace(' ', '') == 'testtemplate':
+            self._type_getter = Setting(self._set_template)
+        return _Table._tokenize(self, token, index)
+
 
 class TestCaseTable(_Table):
     _setting_getter_class = TestCaseSetting
-    _test_template = False
+    _test_template = None
+    _default_template = None
 
     @property
     def _type_getter_class(self):
-        if self._test_template:
+        if self._test_template or (self._default_template and
+                                   self._test_template is not False):
             return TemplatedKeywordCall
         return KeywordCall
 
@@ -368,11 +371,12 @@ class TestCaseTable(_Table):
     def _tokenize(self, token, index):
         if index == 0:
             if token:
-                self._test_template = False
-            return [(token, NAME)]
+                self._test_template = None
+            return [(token, TC_KW_NAME)]
         if index == 1 and self._is_setting(token):
             if self._is_template(token):
-                self._type_getter = TemplateSetting(self._set_template)
+                self._test_template = False
+                self._type_getter = TestCaseSetting(self.set_test_template)
             else:
                 self._type_getter = self._setting_getter_class()
         if index == 1 and self._is_for_loop(token):
@@ -391,8 +395,14 @@ class TestCaseTable(_Table):
         return token.startswith(':') and \
                 token.upper().replace(':', '').strip() == 'FOR'
 
-    def _set_template(self, template):
-        self._test_template = template.upper() not in ('', '\\', 'NONE', '${EMPTY}')
+    def set_test_template(self, template):
+        self._test_template = self._is_template_set(template)
+
+    def set_default_template(self, template):
+        self._default_template = self._is_template_set(template)
+
+    def _is_template_set(self, template):
+        return template.upper() not in ('', '\\', 'NONE', '${EMPTY}')
 
 
 class KeywordTable(TestCaseTable):
