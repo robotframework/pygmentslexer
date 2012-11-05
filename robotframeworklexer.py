@@ -201,17 +201,23 @@ class Setting(TypeGetter):
                        'forcetags',
                        'defaulttags',
                        'testtimeout')
+    _custom_tokenizer = None
 
     def _tokenize(self, token, index):
         if index == 0:
             normalized = token.lower().replace(' ', '')
             if normalized in self._keyword_settings:
-                self.tokenize = KeywordCall(support_assign=False).tokenize
+                self._custom_tokenizer = KeywordCall(support_assign=False)
             elif normalized in self._import_settings:
-                self.tokenize = ImportSetting().tokenize
+                self._custom_tokenizer = ImportSetting()
             elif normalized not in self._other_settings:
                 return ERROR
+        elif self._custom_tokenizer:
+            return self._custom_tokenize(token, index)
         return TypeGetter._tokenize(self, token, index)
+
+    def _custom_tokenize(self, token, index):
+        return self._custom_tokenizer.tokenize(token)
 
 
 class ImportSetting(TypeGetter):
@@ -242,15 +248,10 @@ class TemplateSetting(TestCaseSetting):
         TestCaseSetting.__init__(self)
         self._set_template = set_template
 
-    def _tokenize(self, token, index, callbacks=None):
-        ret = TestCaseSetting._tokenize(self, token, index)
-        self._x = self.tokenize
-        self.tokenize = self._y
-        return ret
-
-    def _y(self, token):
-        self._set_template(token)
-        return self._x(token)
+    def _custom_tokenize(self, token, index):
+        if index == 1:
+            self._set_template(token)
+        return self._custom_tokenizer.tokenize(token)
 
 
 class KeywordSetting(TestCaseSetting):
@@ -380,15 +381,14 @@ class TestCaseTable(_Table):
         return token.startswith('[') and token.endswith(']')
 
     def _is_template(self, token):
-        return token.lower().replace(" ", "") == '[template]'
+        return token.upper().replace(' ', '') == '[TEMPLATE]'
 
     def _is_for_loop(self, token):
         return token.startswith(':') and \
                 token.upper().replace(':', '').strip() == 'FOR'
 
     def _set_template(self, template):
-        print template
-        self._test_template = template.lower() not in ('', 'none')
+        self._test_template = template.upper() not in ('', '\\', 'NONE', '${EMPTY}')
 
 
 class KeywordTable(TestCaseTable):
