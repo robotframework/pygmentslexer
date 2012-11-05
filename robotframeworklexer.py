@@ -219,11 +219,29 @@ class ImportSetting(TypeGetter):
 
 
 class TestCaseSetting(Setting):
+    _keyword_settings = ('setup',
+                         'precondition',
+                         'teardown',
+                         'postcondition',
+                         'template')
+    _import_settings = ()
+    _other_settings = ('documentation',
+                       'tags',
+                       'timeout')
 
     def _tokenize(self, token, index):
         if index == 0:
-            return [('[', SYNTAX), (token[1:-1], SETTING), (']', SYNTAX)]
+            type = Setting._tokenize(self, token[1:-1], index)
+            return [('[', SYNTAX), (token[1:-1], type), (']', SYNTAX)]
         return Setting._tokenize(self, token, index)
+
+
+class KeywordSetting(TestCaseSetting):
+    _keyword_settings = ('teardown',)
+    _other_settings = ('documentation',
+                       'arguments',
+                       'return',
+                       'timeout')
 
 
 class Variable(TypeGetter):
@@ -310,6 +328,7 @@ class SettingTable(_Table):
 
 class TestCaseTable(_Table):
     _type_getter_class = KeywordCall
+    _setting_getter_class = TestCaseSetting
 
     def _continues(self, token, index):
         return index > 0 and _Table._continues(self, token, index)
@@ -318,7 +337,7 @@ class TestCaseTable(_Table):
         if index == 0:
             return [(token, NAME)]
         if index == 1 and self._is_setting(token):
-            self._type_getter = TestCaseSetting()
+            self._type_getter = self._setting_getter_class()
         if index == 1 and self._is_for_loop(token):
             self._type_getter = ForLoop()
         if index == 1 and self._is_empty(token):
@@ -334,7 +353,7 @@ class TestCaseTable(_Table):
 
 
 class KeywordTable(TestCaseTable):
-    pass
+    _setting_getter_class = KeywordSetting
 
 
 # Following code copied directly from Robot Framework 2.7.5.

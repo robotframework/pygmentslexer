@@ -38,6 +38,7 @@ Example
     [teardown]    keyword    arg
 
 Example 2    [Documentation]    example
+    [ t a g s ]    foo
     Keyword    arg    arg ${with var}    # comment
     ${var} =    keyword
     ${var}    keyword    ${arg}   ${two} vars ${here}    arg   arg    arg
@@ -81,6 +82,8 @@ XXX
     [Documentation]    hello
     kw    arg
     ${var} =    kw    ${var}
+    [Teardown]    keyword    arg1    ${var}
     [Return]    ${var}
+    [invalid]   syntax
 
 Given ${variable} handling works out-of-the-box
