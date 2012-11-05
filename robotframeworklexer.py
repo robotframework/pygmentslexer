@@ -236,6 +236,23 @@ class TestCaseSetting(Setting):
         return Setting._tokenize(self, token, index)
 
 
+class TemplateSetting(TestCaseSetting):
+
+    def __init__(self, set_template):
+        TestCaseSetting.__init__(self)
+        self._set_template = set_template
+
+    def _tokenize(self, token, index, callbacks=None):
+        ret = TestCaseSetting._tokenize(self, token, index)
+        self._x = self.tokenize
+        self.tokenize = self._y
+        return ret
+
+    def _y(self, token):
+        self._set_template(token)
+        return self._x(token)
+
+
 class KeywordSetting(TestCaseSetting):
     _keyword_settings = ('teardown',)
     _other_settings = ('documentation',
@@ -265,6 +282,10 @@ class KeywordCall(TypeGetter):
 
     def _is_assign(self, token):
         return token.startswith(('${', '@{')) and token.rstrip(' =').endswith('}')
+
+
+class TemplatedKeywordCall(TypeGetter):
+    _types = [ARGUMENT]
 
 
 class ForLoop(TypeGetter):
@@ -327,17 +348,28 @@ class SettingTable(_Table):
 
 
 class TestCaseTable(_Table):
-    _type_getter_class = KeywordCall
     _setting_getter_class = TestCaseSetting
+    _test_template = False
+
+    @property
+    def _type_getter_class(self):
+        if self._test_template:
+            return TemplatedKeywordCall
+        return KeywordCall
 
     def _continues(self, token, index):
         return index > 0 and _Table._continues(self, token, index)
 
     def _tokenize(self, token, index):
         if index == 0:
+            if token:
+                self._test_template = False
             return [(token, NAME)]
         if index == 1 and self._is_setting(token):
-            self._type_getter = self._setting_getter_class()
+            if self._is_template(token):
+                self._type_getter = TemplateSetting(self._set_template)
+            else:
+                self._type_getter = self._setting_getter_class()
         if index == 1 and self._is_for_loop(token):
             self._type_getter = ForLoop()
         if index == 1 and self._is_empty(token):
@@ -347,13 +379,24 @@ class TestCaseTable(_Table):
     def _is_setting(self, token):
         return token.startswith('[') and token.endswith(']')
 
+    def _is_template(self, token):
+        return token.lower().replace(" ", "") == '[template]'
+
     def _is_for_loop(self, token):
         return token.startswith(':') and \
                 token.upper().replace(':', '').strip() == 'FOR'
 
+    def _set_template(self, template):
+        print template
+        self._test_template = template.lower() not in ('', 'none')
+
 
 class KeywordTable(TestCaseTable):
+    _type_getter_class = KeywordCall
     _setting_getter_class = KeywordSetting
+
+    def _is_template(self, token):
+        return False
 
 
 # Following code copied directly from Robot Framework 2.7.5.
