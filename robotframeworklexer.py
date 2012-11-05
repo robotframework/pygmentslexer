@@ -32,6 +32,14 @@ SYNTAX = Punctuation
 ERROR = Error
 
 
+def normalize(string, remove=""):
+    string = string.lower()
+    for char in remove + ' ':
+        if char in string:
+            string = string.replace(char, '')
+    return string
+
+
 class RobotFrameworkLexer(Lexer):
     name = 'RobotFrameworkLexer'
     aliases = ['robotframework']
@@ -116,7 +124,7 @@ class RowTokenizer(object):
         self._table.end_row()
 
     def _start_table(self, header):
-        name = header.replace('*', '').replace(' ', '').lower()
+        name = normalize(header, remove='*')
         return self._tables.get(name, UnknownTable())
 
     def _tokenize(self, token, index, commented, separator, heading):
@@ -215,7 +223,7 @@ class Setting(TypeGetter):
         if index == 1 and self._set_template:
             self._set_template(token)
         if index == 0:
-            normalized = token.lower().replace(' ', '')
+            normalized = normalize(token)
             if normalized in self._keyword_settings:
                 self._custom_tokenizer = KeywordCall(support_assign=False)
             elif normalized in self._import_settings:
@@ -348,7 +356,7 @@ class SettingTable(_Table):
             self._set_template = set_template
 
     def _tokenize(self, token, index):
-        if index == 0 and token.lower().replace(' ', '') == 'testtemplate':
+        if index == 0 and normalize(token) == 'testtemplate':
             self._type_getter = Setting(self._set_template)
         return _Table._tokenize(self, token, index)
 
@@ -389,11 +397,10 @@ class TestCaseTable(_Table):
         return token.startswith('[') and token.endswith(']')
 
     def _is_template(self, token):
-        return token.upper().replace(' ', '') == '[TEMPLATE]'
+        return normalize(token) == '[template]'
 
     def _is_for_loop(self, token):
-        return token.startswith(':') and \
-                token.upper().replace(':', '').strip() == 'FOR'
+        return token.startswith(':') and normalize(token, remove=':') == 'for'
 
     def set_test_template(self, template):
         self._test_template = self._is_template_set(template)
@@ -402,7 +409,7 @@ class TestCaseTable(_Table):
         self._default_template = self._is_template_set(template)
 
     def _is_template_set(self, template):
-        return template.upper() not in ('', '\\', 'NONE', '${EMPTY}')
+        return normalize(template) not in ('', '\\', 'none', '${empty}')
 
 
 class KeywordTable(TestCaseTable):
