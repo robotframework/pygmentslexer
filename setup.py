@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+
+"""Pygments lexer for Robot Framework test data."""
+
 from setuptools import setup
 
 
@@ -8,10 +12,14 @@ robotframework = robotframeworklexer:RobotFrameworkLexer
 
 setup(
     name         = 'robotframeworklexer',
-    version      = '0.0.1',
+    version      = '0.1',
     description  = __doc__,
+    license      = 'Apache License 2.0',
+    url          = 'https://bitbucket.org/pekkaklarck/robotframeworklexer',
+    download_url = 'https://bitbucket.org/pekkaklarck/robotframeworklexer/downloads',
+    keywords     = 'pygments robotframework',
+    platform     = 'any',
     py_modules   = ['robotframeworklexer'],
     entry_points = entry_points,
     requires     = ['pygments']
-
 )

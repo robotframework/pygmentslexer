@@ -23,12 +23,12 @@ wikis, including the wiki here in BitBucket.
 = Installation =
 
 {{{
-$ pip install Pygments
 $ pip install robotframeworklexer
 }}}
 
-If/when this lexer is bundled with Pygments, the second step will not
-be needed anymore.
+This will automatically install also Pygments if you do not already
+have it. If/when this lexer is bundled with Pygments, you only need to
+install Pygments.
 
 = Usage =
 
