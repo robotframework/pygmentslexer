@@ -24,8 +24,7 @@ IMPORT = Name.Namespace
 TC_KW_NAME = Generic.Subheading
 KEYWORD = Name.Function
 ARGUMENT = String
-VAR_BASE = Name.Variable
-VAR_DECO = Punctuation
+VARIABLE = Name.Variable
 COMMENT = Comment
 SEPARATOR = Punctuation
 SYNTAX = Punctuation
@@ -74,15 +73,15 @@ class VariableTokenizer(object):
     def _tokenize(self, var, string, orig_type):
         before = string[:var.start]
         yield before, orig_type
-        yield var.identifier + '{', VAR_DECO
-        for token, type in self.tokenize(var.base, VAR_BASE):
+        yield var.identifier + '{', SYNTAX
+        for token, type in self.tokenize(var.base, VARIABLE):
             yield token, type
-        yield '}', VAR_DECO
+        yield '}', SYNTAX
         if var.index:
-            yield '[', VAR_DECO
-            for token, type in self.tokenize(var.index, VAR_BASE):
+            yield '[', SYNTAX
+            for token, type in self.tokenize(var.index, VARIABLE):
                 yield token, type
-            yield ']', VAR_DECO
+            yield ']', SYNTAX
         for token, type in self.tokenize(string[var.end:], orig_type):
             yield token, type
 
@@ -96,17 +95,12 @@ class RowTokenizer(object):
         settings = SettingTable(testcases.set_default_template)
         variables = VariableTable()
         keywords = KeywordTable()
-        self._tables = {'settings': settings,
-                        'setting': settings,
+        self._tables = {'settings': settings, 'setting': settings,
                         'metadata': settings,
-                        'variables': variables,
-                        'variable': variables,
-                        'testcases': testcases,
-                        'testcase': testcases,
-                        'keywords': keywords,
-                        'keyword': keywords,
-                        'userkeywords': keywords,
-                        'userkeyword': keywords}
+                        'variables': variables, 'variable': variables,
+                        'testcases': testcases, 'testcase': testcases,
+                        'keywords': keywords, 'keyword': keywords,
+                        'userkeywords': keywords, 'userkeyword': keywords}
 
     def tokenize(self, row):
         commented = False
@@ -119,7 +113,8 @@ class RowTokenizer(object):
             elif index == 0 and token.startswith('*'):
                 self._table = self._start_table(token)
                 heading = True
-            for token, type in self._tokenize(token, index, commented, separator, heading):
+            for token, type in self._tokenize(token, index, commented,
+                                              separator, heading):
                 yield token, type
         self._table.end_row()
 
@@ -197,27 +192,16 @@ class TypeGetter(object):
 
 
 class Comment(TypeGetter):
-    _types = [COMMENT]
+    _types = (COMMENT,)
 
 
 class Setting(TypeGetter):
-    _types = [SETTING, ARGUMENT]
-    _keyword_settings = ('suitesetup',
-                         'suiteprecondition',
-                         'suiteteardown',
-                         'suitepostcondition',
-                         'testsetup',
-                         'testprecondition',
-                         'testteardown',
-                         'testpostcondition',
-                         'testtemplate')
-    _import_settings = ('library',
-                        'resource',
-                        'variables')
-    _other_settings = ('documentation',
-                       'metadata',
-                       'forcetags',
-                       'defaulttags',
+    _types = (SETTING, ARGUMENT)
+    _keyword_settings = ('suitesetup', 'suiteprecondition', 'suiteteardown',
+                         'suitepostcondition', 'testsetup', 'testprecondition',
+                         'testteardown', 'testpostcondition', 'testtemplate')
+    _import_settings = ('library', 'resource', 'variables')
+    _other_settings = ('documentation', 'metadata', 'forcetags', 'defaulttags',
                        'testtimeout')
     _custom_tokenizer = None
 
@@ -242,19 +226,14 @@ class Setting(TypeGetter):
 
 
 class ImportSetting(TypeGetter):
-    _types = [IMPORT, ARGUMENT]
+    _types = (IMPORT, ARGUMENT)
 
 
 class TestCaseSetting(Setting):
-    _keyword_settings = ('setup',
-                         'precondition',
-                         'teardown',
-                         'postcondition',
+    _keyword_settings = ('setup', 'precondition', 'teardown', 'postcondition',
                          'template')
     _import_settings = ()
-    _other_settings = ('documentation',
-                       'tags',
-                       'timeout')
+    _other_settings = ('documentation', 'tags', 'timeout')
 
     def _tokenize(self, token, index):
         if index == 0:
@@ -265,14 +244,11 @@ class TestCaseSetting(Setting):
 
 class KeywordSetting(TestCaseSetting):
     _keyword_settings = ('teardown',)
-    _other_settings = ('documentation',
-                       'arguments',
-                       'return',
-                       'timeout')
+    _other_settings = ('documentation', 'arguments', 'return', 'timeout')
 
 
 class Variable(TypeGetter):
-    _types = [SYNTAX, ARGUMENT]
+    _types = (SYNTAX, ARGUMENT)
 
     def _tokenize(self, token, index):
         if index == 0 and not self._is_assign(token):
@@ -281,7 +257,7 @@ class Variable(TypeGetter):
 
 
 class KeywordCall(TypeGetter):
-    _types = [KEYWORD, ARGUMENT]
+    _types = (KEYWORD, ARGUMENT)
 
     def __init__(self, support_assign=True):
         TypeGetter.__init__(self)
@@ -297,7 +273,7 @@ class KeywordCall(TypeGetter):
 
 
 class TemplatedKeywordCall(TypeGetter):
-    _types = [ARGUMENT]
+    _types = (ARGUMENT,)
 
 
 class ForLoop(TypeGetter):
@@ -331,11 +307,11 @@ class _Table(object):
         self._prev_tokens_in_row.append(token)
 
     def _continues(self, token, index):
-        return token == '...' \
-                and all(self._is_empty(t) for t in self._prev_tokens_in_row)
+        return token == '...' and all(self._is_empty(t)
+                                      for t in self._prev_tokens_in_row)
 
     def _is_empty(self, token):
-        return token in ['', '\\']
+        return token in ('', '\\')
 
     def _tokenize(self, token, index):
         return self._type_getter.tokenize(token)
