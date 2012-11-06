@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+"""Usage: generate.py inpath [outpath=out.html] [style=autumn]"""
+
 import sys
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
@@ -18,4 +20,4 @@ if __name__ == '__main__':
     if 2 <= len(sys.argv) <= 4:
         print generate(*sys.argv[1:])
     else:
-        sys.exit('Usage: generate.py inpath [outpath=out.html] [style=autumn]')
+        sys.exit(__doc__)
