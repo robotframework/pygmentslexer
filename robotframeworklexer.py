@@ -137,8 +137,6 @@ class RowTokenizer(object):
 class Splitter(object):
     _space_splitter = re.compile('( {2,})')
     _pipe_splitter = re.compile('((?:^| +)\|(?: +|$))')
-    _pipe_start = re.compile('^(\| +)')
-    _pipe_end = re.compile('( +\|)$')
 
     def split(self, row):
         for token in self._split(row.rstrip()):
@@ -146,7 +144,7 @@ class Splitter(object):
         yield '\n'
 
     def _split(self, row):
-        if self._pipe_start.match(row):
+        if row.startswith('| '):
             return self._split_from_pipes(row)
         return self._split_from_spaces(row)
 
@@ -156,17 +154,13 @@ class Splitter(object):
             yield token
 
     def _split_from_pipes(self, row):
-        first = True
-        while row:
-            try:
-                cell, delim, row = self._pipe_splitter.split(row, 1)
-            except ValueError:
-                cell = row
-                delim = row = ''
-            if not first:
-                yield cell
+        _, delim, row = self._pipe_splitter.split(row, 1)
+        yield delim
+        while self._pipe_splitter.search(row):
+            cell, delim, row = self._pipe_splitter.split(row, 1)
+            yield cell
             yield delim
-            first = False
+        yield row
 
 
 class TypeGetter(object):

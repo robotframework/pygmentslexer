@@ -73,8 +73,8 @@ template
 |  | [Documentation] | Also pipe separated format is supported |
 |  | Should Be Equal |  | ${EMPTY} |
 |  | Should Be Equal |     | ${EMPTY}
-|  | Log Many        | |foo | bar| | \| | |zap|
-|  | Log Many        | | |
+| |     Log Many     | |foo | bar| | \| | |zap|
+| |     Log Many     | | |
 
 
 :FOR
