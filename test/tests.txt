@@ -69,6 +69,14 @@ template
     args       here
     ${more}    args
 
+| Pipes |
+|  | [Documentation] | Also pipe separated format is supported |
+|  | Should Be Equal |  | ${EMPTY} |
+|  | Should Be Equal |     | ${EMPTY}
+|  | Log Many        | |foo | bar| | \| | |zap|
+|  | Log Many        | | |
+
+
 :FOR
     :FOR    ${x}    IN    ${1}    two    3
     ...    neljä    ${6} - 1
