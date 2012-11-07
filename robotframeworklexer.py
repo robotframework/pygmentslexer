@@ -28,6 +28,7 @@ VARIABLE = Name.Variable
 COMMENT = Comment
 SEPARATOR = Punctuation
 SYNTAX = Punctuation
+GHERKIN = Generic.Emph
 ERROR = Error
 
 
@@ -264,8 +265,20 @@ class KeywordCall(TypeGetter):
         if not self._keyword_found and self._is_assign(token):
             self._assigns += 1
             return SYNTAX  # VariableTokenizer tokenizes this later.
+        if self._keyword_found:
+            return TypeGetter._tokenize(self, token, index - self._assigns)
         self._keyword_found = True
-        return TypeGetter._tokenize(self, token, index - self._assigns)
+        return GherkinTokenizer().tokenize(token, KEYWORD)
+
+
+class GherkinTokenizer(object):
+    _gherkin_prefix = re.compile('^(Given|When|Then|And) ', re.IGNORECASE)
+
+    def tokenize(self, token, type):
+        match = self._gherkin_prefix.match(token)
+        if not match:
+            return [(token, type)]
+        return [(match.group(0), GHERKIN), (token[match.end():], type)]
 
 
 class TemplatedKeywordCall(TypeGetter):
@@ -360,7 +373,7 @@ class TestCaseTable(_Table):
         if index == 0:
             if token:
                 self._test_template = None
-            return [(token, TC_KW_NAME)]
+            return GherkinTokenizer().tokenize(token, TC_KW_NAME)
         if index == 1 and self._is_setting(token):
             if self._is_template(token):
                 self._test_template = False
