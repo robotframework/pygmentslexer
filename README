@@ -1,0 +1,6 @@
+This project implements a Pygments__ lexer `Robot Framework`__ test
+data in plain text format. See wiki__ for more information.
+
+__ http://pygments.org
+__ http://robotframework.org
+__ https://bitbucket.org/pekkaklarck/robotframeworklexer/wiki/Home
