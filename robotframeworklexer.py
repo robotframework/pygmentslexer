@@ -41,7 +41,7 @@ def normalize(string, remove=""):
 
 class RobotFrameworkLexer(Lexer):
     name = 'RobotFrameworkLexer'
-    aliases = ['robotframework']
+    aliases = ['RobotFramework', 'robotframework']
     filenames = ['*.txt']
 
     def __init__(self):
