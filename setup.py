@@ -12,13 +12,15 @@ robotframework = robotframeworklexer:RobotFrameworkLexer
 
 setup(
     name         = 'robotframeworklexer',
-    version      = 'devel',
+    version      = '0.1',
     description  = __doc__,
+    author       = 'Robot Framework Developers',
+    author_email = 'robotframework-devel@googlegroups.com',
     license      = 'Apache License 2.0',
     url          = 'https://bitbucket.org/pekkaklarck/robotframeworklexer',
     download_url = 'https://bitbucket.org/pekkaklarck/robotframeworklexer/downloads',
     keywords     = 'pygments robotframework',
-    platform     = 'any',
+    platforms    = 'any',
     py_modules   = ['robotframeworklexer'],
     entry_points = entry_points,
     requires     = ['pygments']
