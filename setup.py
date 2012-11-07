@@ -12,7 +12,7 @@ robotframework = robotframeworklexer:RobotFrameworkLexer
 
 setup(
     name         = 'robotframeworklexer',
-    version      = '0.1',
+    version      = 'devel',
     description  = __doc__,
     license      = 'Apache License 2.0',
     url          = 'https://bitbucket.org/pekkaklarck/robotframeworklexer',
