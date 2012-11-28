@@ -32,7 +32,7 @@ GHERKIN = Generic.Emph
 ERROR = Error
 
 
-def normalize(string, remove=""):
+def normalize(string, remove=''):
     string = string.lower()
     for char in remove + ' ':
         if char in string:
@@ -91,7 +91,7 @@ class RowTokenizer(object):
 
     def __init__(self):
         self._table = UnknownTable()
-        self._splitter = Splitter()
+        self._splitter = RowSplitter()
         testcases = TestCaseTable()
         settings = SettingTable(testcases.set_default_template)
         variables = VariableTable()
@@ -135,19 +135,16 @@ class RowTokenizer(object):
                 yield token, type
 
 
-class Splitter(object):
+class RowSplitter(object):
     _space_splitter = re.compile('( {2,})')
     _pipe_splitter = re.compile('((?:^| +)\|(?: +|$))')
 
     def split(self, row):
-        for token in self._split(row.rstrip()):
+        splitter = self._split_from_spaces \
+                if not row.startswith('| ') else self._split_from_pipes
+        for token in splitter(row.rstrip()):
             yield token
         yield '\n'
-
-    def _split(self, row):
-        if row.startswith('| '):
-            return self._split_from_pipes(row)
-        return self._split_from_spaces(row)
 
     def _split_from_spaces(self, row):
         yield ''  # Start with (pseudo)separator similarly as with pipes
@@ -155,13 +152,13 @@ class Splitter(object):
             yield token
 
     def _split_from_pipes(self, row):
-        _, delim, row = self._pipe_splitter.split(row, 1)
-        yield delim
-        while self._pipe_splitter.search(row):
-            cell, delim, row = self._pipe_splitter.split(row, 1)
+        _, separator, rest = self._pipe_splitter.split(row, 1)
+        yield separator
+        while self._pipe_splitter.search(rest):
+            cell, separator, rest = self._pipe_splitter.split(rest, 1)
             yield cell
-            yield delim
-        yield row
+            yield separator
+        yield rest
 
 
 class TypeGetter(object):
