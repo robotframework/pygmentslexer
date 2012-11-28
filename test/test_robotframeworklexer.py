@@ -21,28 +21,28 @@ class TestVariableFinder(unittest.TestCase):
 
     def test_scalar_variable(self):
         self._verify('${variable}',
-                     ('${', VAR_DECO), ('variable', VAR_BASE), ('}', VAR_DECO))
+                     ('${', SYNTAX), ('variable', VARIABLE), ('}', SYNTAX))
 
     def test_list_variable(self):
         self._verify('@{my var}',
-                     ('@{', VAR_DECO), ('my var', VAR_BASE), ('}', VAR_DECO))
+                     ('@{', SYNTAX), ('my var', VARIABLE), ('}', SYNTAX))
 
     def test_environment_variable(self):
         self._verify('%{VAR_NAME}',
-                     ('%{', VAR_DECO), ('VAR_NAME', VAR_BASE), ('}', VAR_DECO))
+                     ('%{', SYNTAX), ('VAR_NAME', VARIABLE), ('}', SYNTAX))
 
     def test_normal_texst_and_variable(self):
         self._verify("can haz @{var}?!??!!",
                      ('can haz ', ARGUMENT),
-                     ('@{', VAR_DECO), ('var', VAR_BASE), ('}', VAR_DECO),
+                     ('@{', SYNTAX), ('var', VARIABLE), ('}', SYNTAX),
                      ('?!??!!', ARGUMENT))
 
     def test_string_with_multiple_variables(self):
         self._verify("${var} + ${bar}@{x}",
-                     ('${', VAR_DECO), ('var', VAR_BASE), ('}', VAR_DECO),
+                     ('${', SYNTAX), ('var', VARIABLE), ('}', SYNTAX),
                      (' + ', ARGUMENT),
-                     ('${', VAR_DECO), ('bar', VAR_BASE), ('}', VAR_DECO),
-                     ('@{', VAR_DECO), ('x', VAR_BASE), ('}', VAR_DECO))
+                     ('${', SYNTAX), ('bar', VARIABLE), ('}', SYNTAX),
+                     ('@{', SYNTAX), ('x', VARIABLE), ('}', SYNTAX))
 
     def test_escaping(self):
         self._verify('\\${not var}', ('\\${not var}', ARGUMENT))
@@ -50,23 +50,23 @@ class TestVariableFinder(unittest.TestCase):
 
     def test_internal(self):
         self._verify('${var${inside}}',
-                     ('${', VAR_DECO), ('var', VAR_BASE), ('${', VAR_DECO),
-                     ('inside', VAR_BASE), ('}', VAR_DECO), ('}', VAR_DECO))
+                     ('${', SYNTAX), ('var', VARIABLE), ('${', SYNTAX),
+                     ('inside', VARIABLE), ('}', SYNTAX), ('}', SYNTAX))
         self._verify('@{%{var${not}} end',
-                     ('@{', VAR_DECO), ('%{', VAR_DECO), ('var${not', VAR_BASE),
-                     ('}', VAR_DECO), ('}', VAR_DECO), (' end', ARGUMENT))
+                     ('@{', SYNTAX), ('%{', SYNTAX), ('var${not', VARIABLE),
+                     ('}', SYNTAX), ('}', SYNTAX), (' end', ARGUMENT))
 
     def test_list_var_index(self):
         self._verify('${var}[0] is not special',
-                     ('${', VAR_DECO), ('var', VAR_BASE), ('}', VAR_DECO),
+                     ('${', SYNTAX), ('var', VARIABLE), ('}', SYNTAX),
                      ('[0] is not special', ARGUMENT))
         self._verify('@{var}[ 0] is special',
-                     ('@{', VAR_DECO), ('var', VAR_BASE), ('}', VAR_DECO),
-                     ('[', VAR_DECO), (' 0', VAR_BASE), (']', VAR_DECO),
+                     ('@{', SYNTAX), ('var', VARIABLE), ('}', SYNTAX),
+                     ('[', SYNTAX), (' 0', VARIABLE), (']', SYNTAX),
                      (' is special', ARGUMENT))
 
     def test_list_var_index_with_variable(self):
         self._verify('@{var}[${i}] end',
-                     ('@{', VAR_DECO), ('var', VAR_BASE), ('}', VAR_DECO),
-                     ('[', VAR_DECO), ('${', VAR_DECO), ('i', VAR_BASE),
-                     ('}', VAR_DECO), (']', VAR_DECO), (' end', ARGUMENT))
+                     ('@{', SYNTAX), ('var', VARIABLE), ('}', SYNTAX),
+                     ('[', SYNTAX), ('${', SYNTAX), ('i', VARIABLE),
+                     ('}', SYNTAX), (']', SYNTAX), (' end', ARGUMENT))
