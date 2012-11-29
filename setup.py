@@ -12,7 +12,7 @@ robotframework = robotframeworklexer:RobotFrameworkLexer
 
 setup(
     name         = 'robotframeworklexer',
-    version      = 'devel',
+    version      = '0.2',
     description  = __doc__,
     author       = 'Robot Framework Developers',
     author_email = 'robotframework-devel@googlegroups.com',
