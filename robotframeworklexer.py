@@ -15,21 +15,21 @@
 import re
 
 from pygments.lexer import Lexer
-from pygments.token import *
+from pygments.token import Token
 
 
-HEADING = Generic.Heading
-SETTING = Keyword.Namespace
-IMPORT = Name.Namespace
-TC_KW_NAME = Generic.Subheading
-KEYWORD = Name.Function
-ARGUMENT = String
-VARIABLE = Name.Variable
-COMMENT = Comment
-SEPARATOR = Punctuation
-SYNTAX = Punctuation
-GHERKIN = Generic.Emph
-ERROR = Error
+HEADING = Token.Generic.Heading
+SETTING = Token.Keyword.Namespace
+IMPORT = Token.Name.Namespace
+TC_KW_NAME = Token.Generic.Subheading
+KEYWORD = Token.Name.Function
+ARGUMENT = Token.String
+VARIABLE = Token.Name.Variable
+COMMENT = Token.Comment
+SEPARATOR = Token.Punctuation
+SYNTAX = Token.Punctuation
+GHERKIN = Token.Generic.Emph
+ERROR = Token.Error
 
 
 def normalize(string, remove=''):
@@ -51,40 +51,40 @@ class RobotFrameworkLexer(Lexer):
     def get_tokens_unprocessed(self, text):
         row_tokenizer = RowTokenizer()
         var_tokenizer = VariableTokenizer()
-        position = 0
+        index = 0
         for row in text.splitlines():
-            for token, type in row_tokenizer.tokenize(row):
-                for token, type in var_tokenizer.tokenize(token, type):
-                    if token:
-                        yield position, type, unicode(token)
-                        position += len(token)
+            for value, token in row_tokenizer.tokenize(row):
+                for value, token in var_tokenizer.tokenize(value, token):
+                    if value:
+                        yield index, token, unicode(value)
+                        index += len(value)
 
 
 class VariableTokenizer(object):
 
-    def tokenize(self, string, type):
+    def tokenize(self, string, token):
         var = VariableSplitter(string, identifiers='$@%')
-        if var.start < 0 or type in (COMMENT, ERROR):
-            yield string, type
+        if var.start < 0 or token in (COMMENT, ERROR):
+            yield string, token
             return
-        for token, type in self._tokenize(var, string, type):
-            if token:
-                yield token, type
+        for value, token in self._tokenize(var, string, token):
+            if value:
+                yield value, token
 
-    def _tokenize(self, var, string, orig_type):
+    def _tokenize(self, var, string, orig_token):
         before = string[:var.start]
-        yield before, orig_type
+        yield before, orig_token
         yield var.identifier + '{', SYNTAX
-        for token, type in self.tokenize(var.base, VARIABLE):
-            yield token, type
+        for value, token in self.tokenize(var.base, VARIABLE):
+            yield value, token
         yield '}', SYNTAX
         if var.index:
             yield '[', SYNTAX
-            for token, type in self.tokenize(var.index, VARIABLE):
-                yield token, type
+            for value, token in self.tokenize(var.index, VARIABLE):
+                yield value, token
             yield ']', SYNTAX
-        for token, type in self.tokenize(string[var.end:], orig_type):
-            yield token, type
+        for value, token in self.tokenize(string[var.end:], orig_token):
+            yield value, token
 
 
 class RowTokenizer(object):
@@ -106,33 +106,33 @@ class RowTokenizer(object):
     def tokenize(self, row):
         commented = False
         heading = False
-        for index, token in enumerate(self._splitter.split(row)):
-            # First token, and every second after that, is a separator.
+        for index, value in enumerate(self._splitter.split(row)):
+            # First value, and every second after that, is a separator.
             index, separator = divmod(index-1, 2)
-            if token.startswith('#'):
+            if value.startswith('#'):
                 commented = True
-            elif index == 0 and token.startswith('*'):
-                self._table = self._start_table(token)
+            elif index == 0 and value.startswith('*'):
+                self._table = self._start_table(value)
                 heading = True
-            for token, type in self._tokenize(token, index, commented,
-                                              separator, heading):
-                yield token, type
+            for value, token in self._tokenize(value, index, commented,
+                                               separator, heading):
+                yield value, token
         self._table.end_row()
 
     def _start_table(self, header):
         name = normalize(header, remove='*')
         return self._tables.get(name, UnknownTable())
 
-    def _tokenize(self, token, index, commented, separator, heading):
+    def _tokenize(self, value, index, commented, separator, heading):
         if commented:
-            yield token, COMMENT
+            yield value, COMMENT
         elif separator:
-            yield token, SEPARATOR
+            yield value, SEPARATOR
         elif heading:
-            yield token, HEADING
+            yield value, HEADING
         else:
-            for token, type in self._table.tokenize(token, index):
-                yield token, type
+            for value, token in self._table.tokenize(value, index):
+                yield value, token
 
 
 class RowSplitter(object):
@@ -142,14 +142,14 @@ class RowSplitter(object):
     def split(self, row):
         splitter = self._split_from_spaces \
                 if not row.startswith('| ') else self._split_from_pipes
-        for token in splitter(row.rstrip()):
-            yield token
+        for value in splitter(row.rstrip()):
+            yield value
         yield '\n'
 
     def _split_from_spaces(self, row):
         yield ''  # Start with (pseudo)separator similarly as with pipes
-        for token in self._space_splitter.split(row):
-            yield token
+        for value in self._space_splitter.split(row):
+            yield value
 
     def _split_from_pipes(self, row):
         _, separator, rest = self._pipe_splitter.split(row, 1)
@@ -161,36 +161,36 @@ class RowSplitter(object):
         yield rest
 
 
-class TypeGetter(object):
-    _types = None
+class Tokenizer(object):
+    _tokens = None
 
     def __init__(self):
         self._index = 0
 
-    def tokenize(self, token):
-        tokens_and_types = self._tokenize(token, self._index)
+    def tokenize(self, value):
+        values_and_tokens = self._tokenize(value, self._index)
         self._index += 1
-        if not isinstance(tokens_and_types, list):
-            tokens_and_types = [(token, tokens_and_types)]
-        return tokens_and_types
+        if isinstance(values_and_tokens, type(Token)):
+            values_and_tokens = [(value, values_and_tokens)]
+        return values_and_tokens
 
-    def _tokenize(self, token, index):
-        index = min(index, len(self._types) - 1)
-        return self._types[index]
+    def _tokenize(self, value, index):
+        index = min(index, len(self._tokens) - 1)
+        return self._tokens[index]
 
-    def _is_assign(self, token):
-        if token.endswith('='):
-            token = token[:-1].strip()
-        var = VariableSplitter(token, identifiers='$@')
-        return var.start == 0 and var.end == len(token)
-
-
-class Comment(TypeGetter):
-    _types = (COMMENT,)
+    def _is_assign(self, value):
+        if value.endswith('='):
+            value = value[:-1].strip()
+        var = VariableSplitter(value, identifiers='$@')
+        return var.start == 0 and var.end == len(value)
 
 
-class Setting(TypeGetter):
-    _types = (SETTING, ARGUMENT)
+class Comment(Tokenizer):
+    _tokens = (COMMENT,)
+
+
+class Setting(Tokenizer):
+    _tokens = (SETTING, ARGUMENT)
     _keyword_settings = ('suitesetup', 'suiteprecondition', 'suiteteardown',
                          'suitepostcondition', 'testsetup', 'testprecondition',
                          'testteardown', 'testpostcondition', 'testtemplate')
@@ -199,15 +199,15 @@ class Setting(TypeGetter):
                        'testtimeout')
     _custom_tokenizer = None
 
-    def __init__(self, set_template=None):
-        TypeGetter.__init__(self)
-        self._set_template = set_template
+    def __init__(self, template_setter=None):
+        Tokenizer.__init__(self)
+        self._template_setter = template_setter
 
-    def _tokenize(self, token, index):
-        if index == 1 and self._set_template:
-            self._set_template(token)
+    def _tokenize(self, value, index):
+        if index == 1 and self._template_setter:
+            self._template_setter(value)
         if index == 0:
-            normalized = normalize(token)
+            normalized = normalize(value)
             if normalized in self._keyword_settings:
                 self._custom_tokenizer = KeywordCall(support_assign=False)
             elif normalized in self._import_settings:
@@ -215,12 +215,12 @@ class Setting(TypeGetter):
             elif normalized not in self._other_settings:
                 return ERROR
         elif self._custom_tokenizer:
-            return self._custom_tokenizer.tokenize(token)
-        return TypeGetter._tokenize(self, token, index)
+            return self._custom_tokenizer.tokenize(value)
+        return Tokenizer._tokenize(self, value, index)
 
 
-class ImportSetting(TypeGetter):
-    _types = (IMPORT, ARGUMENT)
+class ImportSetting(Tokenizer):
+    _tokens = (IMPORT, ARGUMENT)
 
 
 class TestCaseSetting(Setting):
@@ -229,11 +229,11 @@ class TestCaseSetting(Setting):
     _import_settings = ()
     _other_settings = ('documentation', 'tags', 'timeout')
 
-    def _tokenize(self, token, index):
+    def _tokenize(self, value, index):
         if index == 0:
-            type = Setting._tokenize(self, token[1:-1], index)
-            return [('[', SYNTAX), (token[1:-1], type), (']', SYNTAX)]
-        return Setting._tokenize(self, token, index)
+            type = Setting._tokenize(self, value[1:-1], index)
+            return [('[', SYNTAX), (value[1:-1], type), (']', SYNTAX)]
+        return Setting._tokenize(self, value, index)
 
 
 class KeywordSetting(TestCaseSetting):
@@ -241,156 +241,159 @@ class KeywordSetting(TestCaseSetting):
     _other_settings = ('documentation', 'arguments', 'return', 'timeout')
 
 
-class Variable(TypeGetter):
-    _types = (SYNTAX, ARGUMENT)
+class Variable(Tokenizer):
+    _tokens = (SYNTAX, ARGUMENT)
 
-    def _tokenize(self, token, index):
-        if index == 0 and not self._is_assign(token):
+    def _tokenize(self, value, index):
+        if index == 0 and not self._is_assign(value):
             return ERROR
-        return TypeGetter._tokenize(self, token, index)
+        return Tokenizer._tokenize(self, value, index)
 
 
-class KeywordCall(TypeGetter):
-    _types = (KEYWORD, ARGUMENT)
+class KeywordCall(Tokenizer):
+    _tokens = (KEYWORD, ARGUMENT)
 
     def __init__(self, support_assign=True):
-        TypeGetter.__init__(self)
+        Tokenizer.__init__(self)
         self._keyword_found = not support_assign
         self._assigns = 0
 
-    def _tokenize(self, token, index):
-        if not self._keyword_found and self._is_assign(token):
+    def _tokenize(self, value, index):
+        if not self._keyword_found and self._is_assign(value):
             self._assigns += 1
             return SYNTAX  # VariableTokenizer tokenizes this later.
         if self._keyword_found:
-            return TypeGetter._tokenize(self, token, index - self._assigns)
+            return Tokenizer._tokenize(self, value, index - self._assigns)
         self._keyword_found = True
-        return GherkinTokenizer().tokenize(token, KEYWORD)
+        return GherkinTokenizer().tokenize(value, KEYWORD)
 
 
 class GherkinTokenizer(object):
     _gherkin_prefix = re.compile('^(Given|When|Then|And) ', re.IGNORECASE)
 
-    def tokenize(self, token, type):
-        match = self._gherkin_prefix.match(token)
+    def tokenize(self, value, token):
+        match = self._gherkin_prefix.match(value)
         if not match:
-            return [(token, type)]
-        return [(match.group(0), GHERKIN), (token[match.end():], type)]
+            return [(value, token)]
+        end = match.end()
+        return [(value[:end], GHERKIN), (value[end:], token)]
 
 
-class TemplatedKeywordCall(TypeGetter):
-    _types = (ARGUMENT,)
+class TemplatedKeywordCall(Tokenizer):
+    _tokens = (ARGUMENT,)
 
 
-class ForLoop(TypeGetter):
+class ForLoop(Tokenizer):
 
     def __init__(self):
-        TypeGetter.__init__(self)
+        Tokenizer.__init__(self)
         self._in_arguments = False
 
-    def _tokenize(self, token, index):
-        type = ARGUMENT if self._in_arguments else SYNTAX
-        if token.upper() in ['IN', 'IN RANGE']:
+    def _tokenize(self, value, index):
+        token = ARGUMENT if self._in_arguments else SYNTAX
+        if value.upper() in ('IN', 'IN RANGE'):
             self._in_arguments = True
-        return type
+        return token
 
 
 class _Table(object):
-    _type_getter_class = None
+    _tokenizer_class = None
 
-    def __init__(self, prev_type_getter=None):
-        self._type_getter = self._type_getter_class()
-        self._prev_type_getter = prev_type_getter
-        self._prev_tokens_in_row = []
+    def __init__(self, prev_tokenizer=None):
+        self._tokenizer = self._tokenizer_class()
+        self._prev_tokenizer = prev_tokenizer
+        self._prev_values_on_row = []
 
-    def tokenize(self, token, index):
-        if self._continues(token, index):
-            self._type_getter = self._prev_type_getter
-            yield token, SYNTAX
+    def tokenize(self, value, index):
+        if self._continues(value, index):
+            self._tokenizer = self._prev_tokenizer
+            yield value, SYNTAX
         else:
-            for token_and_type in self._tokenize(token, index):
-                yield token_and_type
-        self._prev_tokens_in_row.append(token)
+            for value_and_token in self._tokenize(value, index):
+                yield value_and_token
+        self._prev_values_on_row.append(value)
 
-    def _continues(self, token, index):
-        return token == '...' and all(self._is_empty(t)
-                                      for t in self._prev_tokens_in_row)
+    def _continues(self, value, index):
+        return value == '...' and all(self._is_empty(t)
+                                      for t in self._prev_values_on_row)
 
-    def _is_empty(self, token):
-        return token in ('', '\\')
+    def _is_empty(self, value):
+        return value in ('', '\\')
 
-    def _tokenize(self, token, index):
-        return self._type_getter.tokenize(token)
+    def _tokenize(self, value, index):
+        return self._tokenizer.tokenize(value)
 
     def end_row(self):
-        self.__init__(prev_type_getter=self._type_getter)
+        self.__init__(prev_tokenizer=self._tokenizer)
 
 
 class UnknownTable(_Table):
-    _type_getter_class = Comment
+    _tokenizer_class = Comment
 
-    def _continues(self, token, index):
+    def _continues(self, value, index):
         return False
 
 
 class VariableTable(_Table):
-    _type_getter_class = Variable
+    _tokenizer_class = Variable
 
 
 class SettingTable(_Table):
-    _type_getter_class = Setting
+    _tokenizer_class = Setting
 
-    def __init__(self, set_template=None, prev_type_getter=None):
-        _Table.__init__(self, prev_type_getter)
-        if set_template:
-            self._set_template = set_template
+    def __init__(self, template_setter, prev_tokenizer=None):
+        _Table.__init__(self, prev_tokenizer)
+        self._template_setter = template_setter
 
-    def _tokenize(self, token, index):
-        if index == 0 and normalize(token) == 'testtemplate':
-            self._type_getter = Setting(self._set_template)
-        return _Table._tokenize(self, token, index)
+    def _tokenize(self, value, index):
+        if index == 0 and normalize(value) == 'testtemplate':
+            self._tokenizer = Setting(self._template_setter)
+        return _Table._tokenize(self, value, index)
+
+    def end_row(self):
+        self.__init__(self._template_setter, prev_tokenizer=self._tokenizer)
 
 
 class TestCaseTable(_Table):
-    _setting_getter_class = TestCaseSetting
+    _setting_class = TestCaseSetting
     _test_template = None
     _default_template = None
 
     @property
-    def _type_getter_class(self):
+    def _tokenizer_class(self):
         if self._test_template or (self._default_template and
                                    self._test_template is not False):
             return TemplatedKeywordCall
         return KeywordCall
 
-    def _continues(self, token, index):
-        return index > 0 and _Table._continues(self, token, index)
+    def _continues(self, value, index):
+        return index > 0 and _Table._continues(self, value, index)
 
-    def _tokenize(self, token, index):
+    def _tokenize(self, value, index):
         if index == 0:
-            if token:
+            if value:
                 self._test_template = None
-            return GherkinTokenizer().tokenize(token, TC_KW_NAME)
-        if index == 1 and self._is_setting(token):
-            if self._is_template(token):
+            return GherkinTokenizer().tokenize(value, TC_KW_NAME)
+        if index == 1 and self._is_setting(value):
+            if self._is_template(value):
                 self._test_template = False
-                self._type_getter = TestCaseSetting(self.set_test_template)
+                self._tokenizer = self._setting_class(self.set_test_template)
             else:
-                self._type_getter = self._setting_getter_class()
-        if index == 1 and self._is_for_loop(token):
-            self._type_getter = ForLoop()
-        if index == 1 and self._is_empty(token):
-            return [(token, SYNTAX)]
-        return _Table._tokenize(self, token, index)
+                self._tokenizer = self._setting_class()
+        if index == 1 and self._is_for_loop(value):
+            self._tokenizer = ForLoop()
+        if index == 1 and self._is_empty(value):
+            return [(value, SYNTAX)]
+        return _Table._tokenize(self, value, index)
 
-    def _is_setting(self, token):
-        return token.startswith('[') and token.endswith(']')
+    def _is_setting(self, value):
+        return value.startswith('[') and value.endswith(']')
 
-    def _is_template(self, token):
-        return normalize(token) == '[template]'
+    def _is_template(self, value):
+        return normalize(value) == '[template]'
 
-    def _is_for_loop(self, token):
-        return token.startswith(':') and normalize(token, remove=':') == 'for'
+    def _is_for_loop(self, value):
+        return value.startswith(':') and normalize(value, remove=':') == 'for'
 
     def set_test_template(self, template):
         self._test_template = self._is_template_set(template)
@@ -403,10 +406,10 @@ class TestCaseTable(_Table):
 
 
 class KeywordTable(TestCaseTable):
-    _type_getter_class = KeywordCall
-    _setting_getter_class = KeywordSetting
+    _tokenizer_class = KeywordCall
+    _setting_class = KeywordSetting
 
-    def _is_template(self, token):
+    def _is_template(self, value):
         return False
 
 

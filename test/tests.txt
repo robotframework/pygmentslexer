@@ -2,6 +2,7 @@ Stuff before first table is considered comment.
 ...    and there is no continuing here.
 
 *** Settings ***
+...              Error
 Documentation    Hyvää päivää    ${var}
 Library    XML    arg
 Resource   ${foobar}.txt    # comment
@@ -19,6 +20,7 @@ Stuff in unrecognized tables is considered comment.
 This too    is ${comment}.
 
 *variable
+...               error
 ${VARIABLE}       value
 ${ASSIGNMENT}=    value
 @{VARIABLE}       value 1    ${var}    \${not}    \\${var}    \\\${not}    # comment
