@@ -46,9 +46,10 @@ class RobotFrameworkLexer(Lexer):
 
     Supports both space and pipe separated plain text formats.
     """
-    name = 'RobotFrameworkLexer'
+    name = 'RobotFramework'
     aliases = ['RobotFramework', 'robotframework']
     filenames = ['*.txt']
+    mimetypes = ['text/x-robotframework']
 
     def __init__(self):
         Lexer.__init__(self, tabsize=2, encoding='UTF-8')
