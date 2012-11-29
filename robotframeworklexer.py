@@ -41,6 +41,11 @@ def normalize(string, remove=''):
 
 
 class RobotFrameworkLexer(Lexer):
+    """
+    For `Robot Framework <http://robotframework.org>`_ test data.
+
+    Supports both space and pipe separated plain text formats.
+    """
     name = 'RobotFrameworkLexer'
     aliases = ['RobotFramework', 'robotframework']
     filenames = ['*.txt']
