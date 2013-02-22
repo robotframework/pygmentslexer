@@ -48,11 +48,13 @@ class RobotFrameworkLexer(Lexer):
     """
     name = 'RobotFramework'
     aliases = ['RobotFramework', 'robotframework']
-    filenames = ['*.txt']
+    filenames = ['*.txt', '*.robot']
     mimetypes = ['text/x-robotframework']
 
-    def __init__(self):
-        Lexer.__init__(self, tabsize=2, encoding='UTF-8')
+    def __init__(self, **options):
+        options['tabsize'] = 2
+        options['encoding'] = 'UTF-8'
+        Lexer.__init__(self, **options)
 
     def get_tokens_unprocessed(self, text):
         row_tokenizer = RowTokenizer()
@@ -480,12 +482,12 @@ class VariableSplitter:
     def _find_variable(self, string):
         max_end_index = string.rfind('}')
         if max_end_index == -1:
-            return ValueError('No variable end found')
+            raise ValueError('No variable end found')
         if self._is_escaped(string, max_end_index):
             return self._find_variable(string[:max_end_index])
         start_index = self._find_start_index(string, 1, max_end_index)
         if start_index == -1:
-            return ValueError('No variable start found')
+            raise ValueError('No variable start found')
         return start_index, max_end_index
 
     def _find_start_index(self, string, start, end):
