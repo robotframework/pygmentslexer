@@ -47,6 +47,7 @@ Example 2    [Documentation]    example
     Keyword    arg    arg ${with var}    # comment
     ${var} =    keyword
     ${var}    keyword    ${arg}   ${two} vars ${here}    arg   arg    arg
+    Trailing spaces                            
     ${v1}    ${v2}    @{v3} =    keyword
 
 ...

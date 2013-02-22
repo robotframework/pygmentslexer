@@ -70,3 +70,50 @@ class TestVariableFinder(unittest.TestCase):
                      ('@{', SYNTAX), ('var', VARIABLE), ('}', SYNTAX),
                      ('[', SYNTAX), ('${', SYNTAX), ('i', VARIABLE),
                      ('}', SYNTAX), (']', SYNTAX), (' end', ARGUMENT))
+
+
+class TestTrailingSpaces(unittest.TestCase):
+
+    def _verify(self, text, *expected):
+        actual = list(RobotFrameworkLexer().get_tokens_unprocessed(text))
+        self.assertEqual(len(actual), len(expected))
+        for act, exp in zip(actual, expected):
+            self.assertEqual(act, exp)
+
+    def test_space_separated(self):
+        self._verify('*** Settings ***  \n'
+                     'Library   NoTrail\n'
+                     'Resource  trail   \n',
+                     (0, HEADING, '*** Settings ***'),
+                     (16, SEPARATOR, '  '),
+                     (18, SEPARATOR, '\n'),
+                     (19, SETTING, 'Library'),
+                     (26, SEPARATOR, '   '),
+                     (29, IMPORT, 'NoTrail'),
+                     (36, SEPARATOR, '\n'),
+                     (37, SETTING, 'Resource'),
+                     (45, SEPARATOR, '  '),
+                     (47, IMPORT, 'trail'),
+                     (52, SEPARATOR, '   '),
+                     (55, SEPARATOR, '\n'))
+
+    def test_pipe_separated(self):
+        self._verify('| *** Settings *** |  \n'
+                     '| Library  | NoTrail |\n'
+                     '| Resource | trail   |  \n',
+                     (0, SEPARATOR, '| '),
+                     (2, HEADING, '*** Settings ***'),
+                     (18, SEPARATOR, ' |  '),
+                     (22, SEPARATOR, '\n'),
+                     (23, SEPARATOR, '| '),
+                     (25, SETTING, 'Library'),
+                     (32, SEPARATOR, '  | '),
+                     (36, IMPORT, 'NoTrail'),
+                     (43, SEPARATOR, ' |'),
+                     (45, SEPARATOR, '\n'),
+                     (46, SEPARATOR, '| '),
+                     (48, SETTING, 'Resource'),
+                     (56, SEPARATOR, ' | '),
+                     (59, IMPORT, 'trail'),
+                     (64, SEPARATOR, '   |  '),
+                     (70, SEPARATOR, '\n'))
