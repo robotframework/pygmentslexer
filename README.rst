@@ -27,7 +27,7 @@ Installation packages are at `PyPI
 <https://pypi.python.org/pypi/robotframeworklexer>`_. Installation itself
 is easiest with ``pip``:
 
-.. code-block:: bash
+.. sourcecode:: bash
 
     pip install pygments
     pip install robotframeworklexer
@@ -41,7 +41,7 @@ Usage
 After installation Pygments will recognize ``robotframework``
 lexer. It can be used, for example, with the ``pygmentize`` tool:
 
-.. code-block:: bash
+.. sourcecode:: bash
 
     # Lexer for ``*.robot`` files is found automatically.
     pygmentize tests.robot
