@@ -62,7 +62,7 @@ Example
 
 The example below ought to be highlighted using Pygments and this lexer:
 
-.. code-block:: robotframework
+.. sourcecode:: robotframework
 
     *** Settings ***
     Documentation    Simple example demonstrating syntax highlighting.
