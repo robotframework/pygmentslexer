@@ -14,6 +14,7 @@ setup(
     name         = 'robotframeworklexer',
     version      = 'devel',
     description  = __doc__,
+    long_description = open('README.rst').read(),
     author       = 'Robot Framework Developers',
     author_email = 'robotframework-devel@googlegroups.com',
     license      = 'Apache License 2.0',
