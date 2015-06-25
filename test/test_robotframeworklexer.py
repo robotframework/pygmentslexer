@@ -117,3 +117,7 @@ class TestTrailingSpaces(unittest.TestCase):
                      (59, IMPORT, 'trail'),
                      (64, SEPARATOR, '   |  '),
                      (70, SEPARATOR, '\n'))
+
+
+if __name__ == '__main__':
+    unittest.main()
