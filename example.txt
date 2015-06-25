@@ -6,6 +6,7 @@ Test Setup       Keyword    argument   argument with ${VARIABLE}
 *** Variables ***
 ${VARIABLE}      Variable value
 @{LIST}          List    variable    here
+&{DICT}          Key1=Value1    Key2=Value2
 
 *** Test Cases ***
 Keyword-driven example
@@ -32,6 +33,7 @@ Gherkin
 *** Keywords ***
 Result Should Be
     [Arguments]    ${expected}
+    [Tags]  whatever
     ${actual} =    Get Value
     Should be Equal    ${actual}    ${expected}
 

@@ -28,6 +28,7 @@ ${ASSIGNMENT}=    value
 INVALID           syntax
 ${IN} ${VALID}    syntax
 ${INV} ==         syntax
+&{DICT}           Key1=Value1    Key2=Value2
 
 #| @{VARIABLE} | value 1 | value 2 | value 3
 | @{VARIABLE} | value 1 | value 2 | value 3 | # comment | here |
@@ -94,6 +95,7 @@ template
 
 XXX
     [Documentation]    hello
+    [Tags]  whatever
     kw    arg
     ${var} =    kw    ${var}
     [Teardown]    keyword    arg1    ${var}
