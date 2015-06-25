@@ -27,6 +27,10 @@ class TestVariableFinder(unittest.TestCase):
         self._verify('@{my var}',
                      ('@{', SYNTAX), ('my var', VARIABLE), ('}', SYNTAX))
 
+    def test_dict_variable(self):
+        self._verify('&{my var}',
+                     ('&{', SYNTAX), ('my var', VARIABLE), ('}', SYNTAX))
+
     def test_environment_variable(self):
         self._verify('%{VAR_NAME}',
                      ('%{', SYNTAX), ('VAR_NAME', VARIABLE), ('}', SYNTAX))
@@ -68,6 +72,18 @@ class TestVariableFinder(unittest.TestCase):
     def test_list_var_index_with_variable(self):
         self._verify('@{var}[${i}] end',
                      ('@{', SYNTAX), ('var', VARIABLE), ('}', SYNTAX),
+                     ('[', SYNTAX), ('${', SYNTAX), ('i', VARIABLE),
+                     ('}', SYNTAX), (']', SYNTAX), (' end', ARGUMENT))
+
+    def test_dict_var_index(self):
+        self._verify('&{var}[ 0] is special',
+                     ('&{', SYNTAX), ('var', VARIABLE), ('}', SYNTAX),
+                     ('[', SYNTAX), (' 0', VARIABLE), (']', SYNTAX),
+                     (' is special', ARGUMENT))
+
+    def test_dict_var_index_with_variable(self):
+        self._verify('&{var}[${i}] end',
+                     ('&{', SYNTAX), ('var', VARIABLE), ('}', SYNTAX),
                      ('[', SYNTAX), ('${', SYNTAX), ('i', VARIABLE),
                      ('}', SYNTAX), (']', SYNTAX), (' end', ARGUMENT))
 
