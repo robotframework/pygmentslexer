@@ -12,7 +12,7 @@ robotframework = robotframeworklexer:RobotFrameworkLexer
 
 setup(
     name         = 'robotframeworklexer',
-    version      = '1.0',
+    version      = 'dev',
     description  = __doc__,
     long_description = open('README.rst').read(),
     author       = 'Robot Framework Developers',
