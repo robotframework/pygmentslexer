@@ -23,6 +23,10 @@ files. This project provides syntax highlighting for the plain text format.
 Installation
 ------------
 
+Installation packages are at `PyPI
+<https://pypi.python.org/pypi/robotframeworklexer>`_. Installation itself
+is easiest with ``pip``:
+
 .. code-block:: bash
 
     pip install pygments
