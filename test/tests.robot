@@ -23,12 +23,12 @@ This too    is ${comment}.
 ...               error
 ${VARIABLE}       value
 ${ASSIGNMENT}=    value
-@{VARIABLE}       value 1    ${var}    \${not}    \\${var}    \\\${not}    # comment
+@{LIST}           value 1    ${var}    \${not}    \\${var}    \\\${not}    # comment
 ...               value # not comment
+&{DICT}           Key1=Value1    Key2=Value2    Key${3}=${value3}
 INVALID           syntax
 ${IN} ${VALID}    syntax
 ${INV} ==         syntax
-&{DICT}           Key1=Value1    Key2=Value2
 
 #| @{VARIABLE} | value 1 | value 2 | value 3
 | @{VARIABLE} | value 1 | value 2 | value 3 | # comment | here |
