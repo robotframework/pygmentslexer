@@ -60,7 +60,10 @@ the documentation of the tool you are using it with.
 Example
 -------
 
-The example below ought to be highlighted using Pygments and this lexer:
+The `<example.robot>`_ file as well as the embedded example below ought
+to be highlighted using Pygments and this lexer. At least the latter
+has been sometimes broken, most likely do to issues in reStructuredText
+support on BitBucket.
 
 .. code:: robotframework
 
