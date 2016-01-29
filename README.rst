@@ -27,7 +27,7 @@ Installation packages are at `PyPI
 <https://pypi.python.org/pypi/robotframeworklexer>`_. Installation itself
 is easiest with ``pip``:
 
-.. sourcecode:: bash
+.. code:: bash
 
     pip install pygments
     pip install robotframeworklexer
@@ -41,7 +41,7 @@ Usage
 After installation Pygments will recognize ``robotframework``
 lexer. It can be used, for example, with the ``pygmentize`` tool:
 
-.. sourcecode:: bash
+.. code:: bash
 
     # Lexer for ``*.robot`` files is found automatically.
     pygmentize tests.robot
@@ -62,7 +62,7 @@ Example
 
 The example below ought to be highlighted using Pygments and this lexer:
 
-.. sourcecode:: robotframework
+.. code:: robotframework
 
     *** Settings ***
     Documentation    Simple example demonstrating syntax highlighting.
