@@ -18,6 +18,8 @@ from pygments.lexer import Lexer
 from pygments.token import Token
 
 
+__version__ = '1.1.dev1'
+
 HEADING = Token.Generic.Heading
 SETTING = Token.Keyword.Namespace
 IMPORT = Token.Name.Namespace
