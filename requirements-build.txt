@@ -1,0 +1,8 @@
+# Requirements needed when creating releases.
+invoke >= 0.20
+rellu >= 0.7
+twine >= 1.12
+wheel
+
+# Include also normal project requirements.
+-r requirements.txt
