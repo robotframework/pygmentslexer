@@ -107,11 +107,9 @@ class RowTokenizer(object):
         variables = VariableTable()
         keywords = KeywordTable()
         self._tables = {'settings': settings, 'setting': settings,
-                        'metadata': settings,
                         'variables': variables, 'variable': variables,
                         'testcases': testcases, 'testcase': testcases,
-                        'keywords': keywords, 'keyword': keywords,
-                        'userkeywords': keywords, 'userkeyword': keywords}
+                        'keywords': keywords, 'keyword': keywords}
 
     def tokenize(self, row):
         commented = False
@@ -201,9 +199,8 @@ class Comment(Tokenizer):
 
 class Setting(Tokenizer):
     _tokens = (SETTING, ARGUMENT)
-    _keyword_settings = ('suitesetup', 'suiteprecondition', 'suiteteardown',
-                         'suitepostcondition', 'testsetup', 'testprecondition',
-                         'testteardown', 'testpostcondition', 'testtemplate')
+    _keyword_settings = ('suitesetup', 'suiteteardown',
+                         'testsetup', 'testteardown', 'testtemplate')
     _import_settings = ('library', 'resource', 'variables')
     _other_settings = ('documentation', 'metadata', 'forcetags', 'defaulttags',
                        'testtimeout')
@@ -234,8 +231,7 @@ class ImportSetting(Tokenizer):
 
 
 class TestCaseSetting(Setting):
-    _keyword_settings = ('setup', 'precondition', 'teardown', 'postcondition',
-                         'template')
+    _keyword_settings = ('setup', 'teardown', 'template')
     _import_settings = ()
     _other_settings = ('documentation', 'tags', 'timeout')
 
