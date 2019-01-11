@@ -60,10 +60,31 @@ class TestVariableFinder(unittest.TestCase):
                      ('@{', SYNTAX), ('%{', SYNTAX), ('var${not', VARIABLE),
                      ('}', SYNTAX), ('}', SYNTAX), (' end', ARGUMENT))
 
-    def test_list_var_index(self):
-        self._verify('${var}[0] is not special',
+    def test_var_item(self):
+        self._verify('${var}[0] has item',
                      ('${', SYNTAX), ('var', VARIABLE), ('}', SYNTAX),
-                     ('[0] is not special', ARGUMENT))
+                     ('[', SYNTAX), ('0', VARIABLE), (']', SYNTAX),
+                     (' has item', ARGUMENT))
+
+    def test_var_item_with_variable(self):
+        self._verify('${var}[${item}] has item with var',
+                     ('${', SYNTAX), ('var', VARIABLE), ('}', SYNTAX),
+                     ('[', SYNTAX),
+                     ('${', SYNTAX), ('item', VARIABLE), ('}', SYNTAX),
+                     (']', SYNTAX),
+                     (' has item with var', ARGUMENT))
+
+    def test_var_items(self):
+        self._verify('${var}[0][key][ ${x}1 ] has items',
+                     ('${', SYNTAX), ('var', VARIABLE), ('}', SYNTAX),
+                     ('[', SYNTAX), ('0', VARIABLE), (']', SYNTAX),
+                     ('[', SYNTAX), ('key', VARIABLE), (']', SYNTAX),
+                     ('[', SYNTAX), (' ', VARIABLE),
+                     ('${', SYNTAX), ('x', VARIABLE), ('}', SYNTAX),
+                     ('1 ', VARIABLE), (']', SYNTAX),
+                     (' has items', ARGUMENT))
+
+    def test_list_var_item(self):
         self._verify('@{var}[ 0] is special',
                      ('@{', SYNTAX), ('var', VARIABLE), ('}', SYNTAX),
                      ('[', SYNTAX), (' 0', VARIABLE), (']', SYNTAX),
@@ -86,6 +107,12 @@ class TestVariableFinder(unittest.TestCase):
                      ('&{', SYNTAX), ('var', VARIABLE), ('}', SYNTAX),
                      ('[', SYNTAX), ('${', SYNTAX), ('i', VARIABLE),
                      ('}', SYNTAX), (']', SYNTAX), (' end', ARGUMENT))
+
+    def test_var_items_escaped(self):
+        for prefix in '$@&':
+            self._verify(prefix + '{var}\\[0] has no items',
+                         (prefix + '{', SYNTAX), ('var', VARIABLE), ('}', SYNTAX),
+                         ('\\[0] has no items', ARGUMENT))
 
 
 class TestTrailingSpaces(unittest.TestCase):
