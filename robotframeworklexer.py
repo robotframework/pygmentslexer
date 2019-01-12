@@ -402,7 +402,7 @@ class TestCaseTable(_Table):
                 self._tokenizer = self._setting_class()
         if index == 1 and self._is_for_loop(value):
             self._tokenizer = ForLoop()
-        if index == 1 and self._is_empty(value):
+        if index == 1 and (value == 'END' or self._is_empty(value)):
             return [(value, SYNTAX)]
         return _Table._tokenize(self, value, index)
 
@@ -413,7 +413,8 @@ class TestCaseTable(_Table):
         return normalize(value) == '[template]'
 
     def _is_for_loop(self, value):
-        return value.startswith(':') and normalize(value, remove=':') == 'for'
+        return (value == 'FOR' or
+                value.startswith(':') and normalize(value, remove=':') == 'for')
 
     def set_test_template(self, template):
         self._test_template = self._is_template_set(template)

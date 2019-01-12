@@ -118,7 +118,8 @@ class TestVariableTokenizer(unittest.TestCase):
 class TestForLoopTokenizer(unittest.TestCase):
 
     def _verify(self, loop, *expected):
-        test = '*** Test Cases ***\nLooping\n    ' + loop
+        loop = '\n'.join('    '+ line for line in loop.splitlines())
+        test = '*** Test Cases ***\nLooping\n' + loop
         actual = list(RobotFrameworkLexer().get_tokens(test))
         expected = [(HEADING, '*** Test Cases ***'),
                     (SYNTAX, '\n'),
@@ -136,16 +137,16 @@ class TestForLoopTokenizer(unittest.TestCase):
 
     def test_in(self):
         SEP = (SYNTAX, '    ')
-        self._verify(':FOR    ${x}    IN    foo    bar',
-                     (SYNTAX, ':FOR'), SEP,
+        self._verify('FOR    ${x}    IN    foo    bar',
+                     (SYNTAX, 'FOR'), SEP,
                      (SYNTAX, '${'), (VARIABLE, 'x'), (SYNTAX, '}'), SEP,
                      (SYNTAX, 'IN'), SEP,
                      (ARGUMENT, 'foo'), SEP, (ARGUMENT, 'bar'))
 
     def test_in_range(self):
         SEP = (SYNTAX, '    ')
-        self._verify(':FOR    ${index}    IN RANGE    1    ${10}',
-                     (SYNTAX, ':FOR'), SEP,
+        self._verify('FOR    ${index}    IN RANGE    1    ${10}',
+                     (SYNTAX, 'FOR'), SEP,
                      (SYNTAX, '${'), (VARIABLE, 'index'), (SYNTAX, '}'), SEP,
                      (SYNTAX, 'IN RANGE'), SEP,
                      (ARGUMENT, '1'), SEP,
@@ -153,8 +154,8 @@ class TestForLoopTokenizer(unittest.TestCase):
 
     def test_in_enumerate(self):
         SEP = (SYNTAX, '    ')
-        self._verify(':FOR    ${index}    ${item}    IN ENUMERATE    foo    bar',
-                     (SYNTAX, ':FOR'), SEP,
+        self._verify('FOR    ${index}    ${item}    IN ENUMERATE    foo    bar',
+                     (SYNTAX, 'FOR'), SEP,
                      (SYNTAX, '${'), (VARIABLE, 'index'), (SYNTAX, '}'), SEP,
                      (SYNTAX, '${'), (VARIABLE, 'item'), (SYNTAX, '}'), SEP,
                      (SYNTAX, 'IN ENUMERATE'), SEP,
@@ -162,29 +163,50 @@ class TestForLoopTokenizer(unittest.TestCase):
 
     def test_in_zip(self):
         SEP = (SYNTAX, '    ')
-        self._verify(':FOR    ${x}    ${y}    IN ZIP    ${XXX}    ${YYY}',
-                     (SYNTAX, ':FOR'), SEP,
+        self._verify('FOR    ${x}    ${y}    IN ZIP    ${XXX}    ${YYY}',
+                     (SYNTAX, 'FOR'), SEP,
                      (SYNTAX, '${'), (VARIABLE, 'x'), (SYNTAX, '}'), SEP,
                      (SYNTAX, '${'), (VARIABLE, 'y'), (SYNTAX, '}'), SEP,
                      (SYNTAX, 'IN ZIP'), SEP,
                      (SYNTAX, '${'), (VARIABLE, 'XXX'), (SYNTAX, '}'), SEP,
                      (SYNTAX, '${'), (VARIABLE, 'YYY'), (SYNTAX, '}'))
 
+    def test_old_for(self):
+        SEP = (SYNTAX, '    ')
+        self._verify(': FOR    ${x}    IN    foo    bar',
+                     (SYNTAX, ': FOR'), SEP,
+                     (SYNTAX, '${'), (VARIABLE, 'x'), (SYNTAX, '}'), SEP,
+                     (SYNTAX, 'IN'), SEP,
+                     (ARGUMENT, 'foo'), SEP, (ARGUMENT, 'bar'))
+
     def test_case_sensitive(self):
         SEP = (SYNTAX, '    ')
-        self._verify(':FOR    ${x}    in    foo    bar',
-                     (SYNTAX, ':FOR'), SEP,
+        self._verify('FOR    ${x}    in    foo    bar',
+                     (SYNTAX, 'FOR'), SEP,
                      (SYNTAX, '${'), (VARIABLE, 'x'), (SYNTAX, '}'), SEP,
                      (ERROR, 'in'), SEP,
                      (ERROR, 'foo'), SEP, (ERROR, 'bar'))
 
     def test_invalid_variable(self):
         SEP = (SYNTAX, '    ')
-        self._verify(':FOR    x    IN    foo    bar',
-                     (SYNTAX, ':FOR'), SEP,
+        self._verify('FOR    x    IN    foo    bar',
+                     (SYNTAX, 'FOR'), SEP,
                      (ERROR, 'x'), SEP,
                      (SYNTAX, 'IN'), SEP,
                      (ARGUMENT, 'foo'), SEP, (ARGUMENT, 'bar'))
+
+    def test_with_body_and_end(self):
+        SEP = (SYNTAX, '    ')
+        SEP2 = (SYNTAX, '        ')
+        NEWLINE = (SYNTAX, '\n')
+        self._verify('FOR    ${x}    IN    foo    bar\n    Log    ${x}\nEND',
+                     (SYNTAX, 'FOR'), SEP,
+                     (SYNTAX, '${'), (VARIABLE, 'x'), (SYNTAX, '}'), SEP,
+                     (SYNTAX, 'IN'), SEP,
+                     (ARGUMENT, 'foo'), SEP, (ARGUMENT, 'bar'), NEWLINE,
+                     SEP2, (KEYWORD, 'Log'), SEP,
+                     (SYNTAX, '${'), (VARIABLE, 'x'), (SYNTAX, '}'), NEWLINE,
+                     SEP, (SYNTAX, 'END'))
 
 
 class TestTrailingSpaces(unittest.TestCase):

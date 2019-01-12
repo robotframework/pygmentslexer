@@ -80,8 +80,32 @@ template
 | |     Log Many     | |foo | bar| | \| | |zap|
 | |     Log Many     | | |
 
-
 FOR
+    FOR    ${x}    IN    foo    bar
+        Log    ${x}
+    END
+    No Operation
+    FOR    ${x}    IN    ${1}    two    3
+    ...    neljä    ${6} - 1
+        Log    ${x}
+    END
+    FOR    ${i}
+    ...    IN RANGE    42
+        ${ret} =    Keyword    ${i}
+        ...    more    args
+    END
+    FOR    ${index}    ${item}    IN ENUMERATE    @{STUFF}
+        No Operation
+    END
+    FOR    ${a}    ${b}    ${c}    IN ZIP    ${X}    ${Y}    ${Z}
+        No Operation
+    END
+    Log    ...
+
+Old :FOR
+    :FOR    ${x}    IN    foo    bar
+    \    Log    ${x}
+    No Operation
     :FOR    ${x}    IN    ${1}    two    3
     ...    neljä    ${6} - 1
     \    Log    ${x}
