@@ -15,10 +15,10 @@ many different applications and wikis.
 What is Robot Framework
 -----------------------
 
-`Robot Framework`_ is a generic test automation framework suitable both for
-normal test automation and Acceptance Test Driven Development (ATDD). Its
-test data is defined in tabular format either in plain text, TSV, or HTML
-files. This project provides syntax highlighting for the plain text format.
+`Robot Framework`_ is a generic open source automation framework for
+acceptance testing, acceptance test driven development (ATDD), and robotic
+process automation (RPA). It has simple plain text syntax and this project
+provides syntax highlighting for it.
 
 Installation
 ------------
@@ -52,60 +52,10 @@ lexer. It can be used, for example, with the ``pygmentize`` tool:
     # Override built-in robotframework lexer with separately installed version.
     pygmentize -O robotframework=robotframework tests
 
-See `generate.py <https://bitbucket.org/robotframework/pygmentslexer/src/default/generate.py>`_
+See `generate.py <https://github.com/robotframework/pygmentslexer/blob/master/generate.py>`_
 script for an example of the programmatic usage. For general information about
 using Pygments, consult `its documentation <http://pygments.org/docs/>`_ and/or
 the documentation of the tool you are using it with.
-
-Example
--------
-
-The `<example.robot>`_ file as well as the embedded example below ought
-to be highlighted using Pygments and this lexer. At least the latter
-has been sometimes broken, most likely do to issues in reStructuredText
-support on BitBucket.
-
-.. code:: robotframework
-
-    *** Settings ***
-    Documentation    Simple example demonstrating syntax highlighting.
-    Library          ExampleLibrary
-    Test Setup       Keyword    argument   argument with ${VARIABLE}
-
-    *** Variables ***
-    ${VARIABLE}      Variable value
-    @{LIST}          List    variable    here
-
-    *** Test Cases ***
-    Keyword-driven example
-        Initialize System
-        Do Something
-        Result Should Be    42
-        [Teardown]    Cleanup System
-
-    Data-driven example
-        [Template]    Keyword
-        argument1   argument2
-        argument    ${VARIABLE}
-        @{LIST}
-
-    Gherkin
-        Given system is initialized
-        When something is done
-        Then result should be "42"
-
-    | Pipes |
-    |  | [Documentation] | Also pipe separated format is supported. |
-    |  | Log | As this example demonstrates. |
-
-    *** Keywords ***
-    Result Should Be
-        [Arguments]    ${expected}
-        ${actual} =    Get Value
-        Should be Equal    ${actual}    ${expected}
-
-    Then result should be "${expected}"
-        Result Should Be    ${expected}
 
 License
 -------
