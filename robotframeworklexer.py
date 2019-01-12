@@ -109,6 +109,7 @@ class RowTokenizer(object):
         self._tables = {'settings': settings, 'setting': settings,
                         'variables': variables, 'variable': variables,
                         'test cases': testcases, 'test case': testcases,
+                        'tasks': testcases, 'task': testcases,
                         'keywords': keywords, 'keyword': keywords,
                         'comments': comments, 'comment': comments}
         self._splitter = RowSplitter()
@@ -206,10 +207,11 @@ class Comment(Tokenizer):
 class Setting(Tokenizer):
     _tokens = (SETTING, ARGUMENT)
     _keyword_settings = ('suite setup', 'suite teardown',
-                         'test setup', 'test teardown', 'test template')
+                         'test setup', 'test teardown', 'test template',
+                         'task setup', 'task teardown', 'task template')
     _import_settings = ('library', 'resource', 'variables')
     _other_settings = ('documentation', 'metadata', 'force tags', 'default tags',
-                       'test timeout')
+                       'test timeout', 'task timeout')
     _custom_tokenizer = None
 
     def __init__(self, template_setter=None):
