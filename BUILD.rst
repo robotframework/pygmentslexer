@@ -164,10 +164,12 @@ Creating distributions
 
       invoke clean
 
-3. Create source distribution and `wheel <http://pythonwheels.com>`_::
+3. Create and validate source distribution in zip format and universal (i.e.
+   Python 2 and 3 compatible) `wheel <http://pythonwheels.com>`_::
 
       python3 setup.py sdist bdist_wheel
       ls -l dist
+      twine check dist/*
 
    Distributions can be tested locally if needed.
 
