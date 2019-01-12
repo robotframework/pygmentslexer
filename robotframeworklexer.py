@@ -34,12 +34,12 @@ GHERKIN = Token.Generic.Emph
 ERROR = Token.Error
 
 
-def normalize(string, remove=''):
+def normalize(string, remove='', strip=True):
     string = string.lower()
-    for char in remove + ' ':
+    for char in remove:
         if char in string:
             string = string.replace(char, '')
-    return string
+    return string if not strip else string.strip()
 
 
 class RobotFrameworkLexer(Lexer):
@@ -100,16 +100,18 @@ class VariableTokenizer(object):
 class RowTokenizer(object):
 
     def __init__(self):
-        self._table = UnknownTable()
-        self._splitter = RowSplitter()
         testcases = TestCaseTable()
         settings = SettingTable(testcases.set_default_template)
         variables = VariableTable()
         keywords = KeywordTable()
+        comments = CommentTable()
+        self._table = comments
         self._tables = {'settings': settings, 'setting': settings,
                         'variables': variables, 'variable': variables,
-                        'testcases': testcases, 'testcase': testcases,
-                        'keywords': keywords, 'keyword': keywords}
+                        'test cases': testcases, 'test case': testcases,
+                        'keywords': keywords, 'keyword': keywords,
+                        'comments': comments, 'comment': comments}
+        self._splitter = RowSplitter()
 
     def tokenize(self, row):
         commented = False
@@ -137,10 +139,14 @@ class RowTokenizer(object):
         elif separator:
             yield value, SEPARATOR
         elif heading:
-            yield value, HEADING
+            token = HEADING if self._in_valid_table() else ERROR
+            yield value, token
         else:
             for value, token in self._table.tokenize(value, index):
                 yield value, token
+
+    def _in_valid_table(self):
+        return not isinstance(self._table, UnknownTable)
 
 
 class RowSplitter(object):
@@ -199,11 +205,11 @@ class Comment(Tokenizer):
 
 class Setting(Tokenizer):
     _tokens = (SETTING, ARGUMENT)
-    _keyword_settings = ('suitesetup', 'suiteteardown',
-                         'testsetup', 'testteardown', 'testtemplate')
+    _keyword_settings = ('suite setup', 'suite teardown',
+                         'test setup', 'test teardown', 'test template')
     _import_settings = ('library', 'resource', 'variables')
-    _other_settings = ('documentation', 'metadata', 'forcetags', 'defaulttags',
-                       'testtimeout')
+    _other_settings = ('documentation', 'metadata', 'force tags', 'default tags',
+                       'test timeout')
     _custom_tokenizer = None
 
     def __init__(self, template_setter=None):
@@ -237,8 +243,8 @@ class TestCaseSetting(Setting):
 
     def _tokenize(self, value, index):
         if index == 0:
-            type = Setting._tokenize(self, value[1:-1], index)
-            return [('[', SYNTAX), (value[1:-1], type), (']', SYNTAX)]
+            token = Setting._tokenize(self, value[1:-1], index)
+            return [('[', SYNTAX), (value[1:-1], token), (']', SYNTAX)]
         return Setting._tokenize(self, value, index)
 
 
@@ -347,11 +353,15 @@ class _Table(object):
         self.__init__(prev_tokenizer=self._tokenizer)
 
 
-class UnknownTable(_Table):
+class CommentTable(_Table):
     _tokenizer_class = Comment
 
     def _continues(self, value, index):
         return False
+
+
+class UnknownTable(CommentTable):
+    pass
 
 
 class VariableTable(_Table):
@@ -366,7 +376,7 @@ class SettingTable(_Table):
         self._template_setter = template_setter
 
     def _tokenize(self, value, index):
-        if index == 0 and normalize(value) == 'testtemplate':
+        if index == 0 and normalize(value) == 'test template':
             self._tokenizer = Setting(self._template_setter)
         return _Table._tokenize(self, value, index)
 
@@ -410,11 +420,11 @@ class TestCaseTable(_Table):
         return value.startswith('[') and value.endswith(']')
 
     def _is_template(self, value):
-        return normalize(value) == '[template]'
+        return normalize(value[1:-1]) == 'template'
 
     def _is_for_loop(self, value):
         return (value == 'FOR' or
-                value.startswith(':') and normalize(value, remove=':') == 'for')
+                value.startswith(':') and normalize(value, remove=': ') == 'for')
 
     def set_test_template(self, template):
         self._test_template = self._is_template_set(template)

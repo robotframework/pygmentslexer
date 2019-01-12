@@ -4,20 +4,19 @@ Stuff before first table is considered comment.
 *** Settings ***
 ...              Error
 Documentation    Hyvää päivää    ${var}
-Library    XML    arg
-Resource   ${foobar}.txt    # comment
-Invalid    syntax
-testsetup   keyword    argument    ${variable}
-Test Teardown   ${keyword}    argument    ${argument}
-Metadata    Name    Value
+Library          XML    arg
+Resource         ${foobar}.txt    # comment
+Test setup       keyword    argument    ${variable}
+Test Teardown    ${keyword}    argument    ${argument}
+Metadata         Name    Value
+metadata         Valid      because settings are case-insensitive
+Meta data        Invalid    because settings are space-sensitive
+Suitesetup       Settings are space-sensitive
+Nonex            Non-existing setting
 
 | Force tags  |  regression  | ${var}
 | ...         |  more        | tags |
 # comment
-
-*** Unknown table ***
-Stuff in unrecognized tables is considered comment.
-This too    is ${comment}.
 
 *variable
 ...               error
@@ -72,8 +71,13 @@ Variable items
     ...
     ...    arg4
 
-template
+Template
     [Template]    Keyword Here
+    args       here
+    ${more}    args
+
+Template 2
+    [ template ]    Keyword Here
     args       here
     ${more}    args
 
@@ -117,7 +121,7 @@ Old :FOR
     ...    IN RANGE    42
     \    ${ret} =    Keyword    ${i}
     \    ...    more    args
-    :FOR    ${index}    ${item}    IN ENUMERATE    @{STUFF}
+    : F O R    ${index}    ${item}    IN ENUMERATE    @{STUFF}
     \    No Operation
     :FOR    ${a}    ${b}    ${c}    IN ZIP    ${X}    ${Y}    ${Z}
     \    No Operation
@@ -128,10 +132,16 @@ Invalid FOR
         No Operation
     END
     No Operation
-    FOR    x    IN    not    variable
+    FOR    x    IN    item    should    be    variable
         No Operation
     END
     No Operation
+    F O R    ${x}    IN    for    is    space-sensitive
+        No Operation
+    E N D
+    for    ${x}    IN    for    is    case-sensitive
+        No Operation
+    end
 
 
 *** Keywords ***    Heading    # Comment     here
@@ -143,7 +153,36 @@ XXX
     ${var} =    kw    ${var}
     [Teardown]    keyword    arg1    ${var}
     [Return]    ${var}
-    [invalid]   syntax
 
 Given ${variable} handling works out-of-the-box
     No Operation
+
+Invalid settings
+    [nonex]        Non-existing settings
+    [Tear Down]    Settings are space-sensitive
+    [ Setup ]      Spaces around are allowed
+    [timeout]      Settings are case-insensitive
+
+*** Nonex ***
+Header above should be invalid because it has non-existing header.
+
+*** Nonex ***    FOO    BAR
+The whole header row above should be invalid because it has non-existing header.
+
+*** TestCase ***
+Header above should be invalid because headers are space-sensitive.
+
+***Settings***
+Default Tags    Spaces around are optional, though.
+
+*** variable ***
+${VAR}          Headers are case-insensitive.
+
+*** Comment ***
+Comment headers are allowed and can contain whatever data.
+
+Data is considered to be comment. No highlighting for
+${variables} or
+...    continuation or anything like that.
+
+THE END
