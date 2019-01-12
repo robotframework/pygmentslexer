@@ -1,0 +1,8 @@
+include BUILD.rst
+include COPYRIGHT.txt
+include LICENSE.txt
+include MANIFEST.in
+include README.rst
+include requirements.txt
+include requirements-build.rst
+include tasks.py
