@@ -81,15 +81,28 @@ template
 | |     Log Many     | | |
 
 
-:FOR
+FOR
     :FOR    ${x}    IN    ${1}    two    3
     ...    neljä    ${6} - 1
     \    Log    ${x}
     :: FOR    ${i}
-    ...    In Range    42
+    ...    IN RANGE    42
     \    ${ret} =    Keyword    ${i}
     \    ...    more    args
+    :FOR    ${index}    ${item}    IN ENUMERATE    @{STUFF}
+    \    No Operation
+    :FOR    ${a}    ${b}    ${c}    IN ZIP    ${X}    ${Y}    ${Z}
+    \    No Operation
     Log    ...
+
+Invalid FOR
+    :FOR    ${x}    in    should    be    upper
+    \    No Operation
+    No Operation
+    :FOR    x    IN    not    variable
+    \    No Operation
+    No Operation
+
 
 *** Keywords ***    Heading    # Comment     here
 

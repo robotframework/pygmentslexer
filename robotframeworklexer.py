@@ -293,13 +293,27 @@ class ForLoop(Tokenizer):
 
     def __init__(self):
         Tokenizer.__init__(self)
+        self._started = False
         self._in_arguments = False
 
     def _tokenize(self, value, index):
-        token = ARGUMENT if self._in_arguments else SYNTAX
-        if value.upper() in ('IN', 'IN RANGE'):
+        if not self._started:
+            self._started = True
+            return SYNTAX
+        if self._in_arguments:
+            return ARGUMENT    # Possible variables tokenized later
+        if self._is_separator(value):
             self._in_arguments = True
-        return token
+            return SYNTAX
+        if self._is_variale(value):
+            return SYNTAX      # Tokenized later
+        return ERROR
+
+    def _is_separator(self, value):
+        return value in ('IN', 'IN RANGE', 'IN ENUMERATE', 'IN ZIP')
+
+    def _is_variale(self, value):
+        return value[:2] == '${' or value[-1:] == '}'
 
 
 class _Table(object):
