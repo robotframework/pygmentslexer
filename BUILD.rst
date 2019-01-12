@@ -120,8 +120,8 @@ Release notes
 
 4. Add, commit and push::
 
-      git add doc/robotframeworklexer-$VERSION.rst
-      git commit -m "Release notes for $VERSION" doc/robotframeworklexer-$VERSION.rst
+      git add docs/robotframeworklexer-$VERSION.rst
+      git commit -m "Release notes for $VERSION" docs/robotframeworklexer-$VERSION.rst
       git push
 
 5. Update later if necessary. Writing release notes is typically the biggest

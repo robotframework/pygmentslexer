@@ -50,7 +50,7 @@ lexer. It can be used, for example, with the ``pygmentize`` tool:
     pygmentize -l robotframework tests.txt
 
     # Override built-in robotframework lexer with separately installed version.
-    pygmentize -O robotframework=robotframework tests
+    pygmentize -O robotframework=robotframework tests.robot
 
 See `generate.py <https://github.com/robotframework/pygmentslexer/blob/master/generate.py>`_
 script for an example of the programmatic usage. For general information about

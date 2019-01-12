@@ -11,10 +11,11 @@ assert Path.cwd() == Path(__file__).parent
 
 REPOSITORY = 'robotframework/pygmentslexer'
 VERSION_PATH = Path('robotframeworklexer.py')
-RELEASE_NOTES_PATH = Path('doc/robotframeworklexer-{version}.rst')
+RELEASE_NOTES_PATH = Path('docs/robotframeworklexer-{version}.rst')
 RELEASE_NOTES_TITLE = 'Robot Framework Lexer {version}'
 RELEASE_NOTES_INTRO = '''
-Robot Framework Lexer is a plugin for Pygments_ providing support for syntax highlightin.
+Robot Framework Lexer is a plugin for Pygments_ providing support for syntax
+highlighting.
 
 Robot Framework Lexer {version} is a new release with
 **UPDATE** enhancements and bug fixes. **ADD more intro stuff...**
