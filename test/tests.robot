@@ -51,6 +51,10 @@ Example 2    [Documentation]    example
     Trailing spaces                            
     ${v1}    ${v2}    @{v3} =    keyword
 
+Variable items
+    Log Many    ${var}[0]    ${var}[key]    ${var}[${item}]    ${var}[0][key][ ${item} ]
+    Log Many    @{var}[0]    &{var}[key]
+    Log Many    ${var}\[0]    @{var}\[0]    &{var}\[0]
 ...
     Keyword    arg1
     ...    ${arg2}
