@@ -44,11 +44,11 @@ Example
     [teardown]    keyword    arg
 
 Example 2    [Documentation]    example
-    [ t a g s ]    foo
+    [ tags ]    foo    # comment
     Keyword    arg    arg ${with var}    # comment
     ${var} =    keyword
     ${var}    keyword    ${arg}   ${two} vars ${here}    arg   arg    arg
-    Trailing spaces                            
+    Trailing spaces
     ${v1}    ${v2}    @{v3} =    keyword
 
 Variable items
@@ -124,11 +124,13 @@ Old :FOR
     Log    ...
 
 Invalid FOR
-    :FOR    ${x}    in    should    be    upper
-    \    No Operation
+    FOR    ${x}    in    should    be    upper
+        No Operation
+    END
     No Operation
-    :FOR    x    IN    not    variable
-    \    No Operation
+    FOR    x    IN    not    variable
+        No Operation
+    END
     No Operation
 
 
@@ -144,3 +146,4 @@ XXX
     [invalid]   syntax
 
 Given ${variable} handling works out-of-the-box
+    No Operation
