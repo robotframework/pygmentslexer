@@ -1,8 +1,7 @@
 *** Settings ***
-Test template    keyword
+Test Template       Keyword
 
-
-*** Test cases ***
+*** Test Cases ***
 Template from settings
     arg1    arg2
     ${var}  arg2
@@ -10,19 +9,19 @@ Template from settings
     @{list}
 
 Overriden template
-   [template]    custom keyword
+   [Template]    custom keyword
     arg1    arg2
     ${var}  arg2
     arg1    ${var}
     @{list}
 
 No template
-   [template]
+   [ template ]
    Keyword    arg1
    ${assign}    Keyword2    arg
 
 No template 2
-   [ T E M P L A T E ]    NoNe
+   [TEMPLATE]    NoNe
    Keyword    arg1
    ${assign}    Keyword2    arg
 
@@ -31,4 +30,3 @@ Template again
     ${var}  arg2
     arg1    ${var}
     @{list}
-
