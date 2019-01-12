@@ -6,7 +6,7 @@ Robot Framework Lexer 1.1
 
 Robot Framework Lexer is a plugin for Pygments_ providing support for syntax highlighting.
 
-Robot Framework Lexer 1.1 is a new release providing Python 3 compatible and support for
+Robot Framework Lexer 1.1 is a new release providing Python 3 compatibility and support for
 new syntax introduced in `Robot Framework 3.1
 <https://github.com/robotframework/robotframework/blob/master/doc/releasenotes/rf-3.1.rst>`_.
 
